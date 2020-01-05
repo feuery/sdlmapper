@@ -63,12 +63,49 @@
 ;; 				       ("colors" :float)))))
 
 
+(defclass sprite ()
+  ((texture :accessor sprite-texture)
+   (entity :accessor sprite-entity)
+   (projection :accessor sprite-projection)))
+
+(defmethod initialize-instance :after ((new-sprite sprite) &key texture)
+  (setf (sprite-texture new-sprite) texture)
+  (let ((w (clinch:width texture))
+  	(h (clinch:height texture)))
+    (setf (sprite-entity new-sprite) (make-instance 'clinch:entity
+  						:shader-program (clinch:get-generic-single-texture-shader)
+  						:indexes (make-instance 'clinch:index-buffer :data '(0 1 2
+  												     0 2 3))       ;; Add the index buffer
+  						:attributes   `(("v" . ,(make-instance 'clinch:buffer 
+  										       :Stride 3
+  										       :data (map 'list (lambda (x)
+  													  (coerce x 'single-float))
+  												  (list (- w)   h 0.0
+  													(- w)  (- h) 0.0
+  													w  (- h) 0.0
+  													w   h 0.0))))
+  								("tc1" . ,(make-instance 'clinch:buffer 
+  											 :Stride 2
+  											 :data (map 'list (lambda (x)
+  													    (coerce x 'single-float))
+  												    '(0.0   1.0
+  												      0.0   0.0
+  												      1.0   0.0
+  												      1.0   1.0)))))
+  						:uniforms   `(("M". :model)
+  							      ("P" . :projection)
+  							      ;;("t1" . :place-holder)
+  							      ))))
+  (setf (clinch:uniform (sprite-entity new-sprite) "t1") texture)
+  (setf (clinch:uniform (sprite-entity new-sprite) "ambientTexture") texture))
+  
+  
+
 (clinch:defevent clinch:*on-window-resized* (win width height ts)
   ;; redo the projection matrix here
   (format t "Window Resized: ~A ~A~%" width height))
 
-
-(defparameter *texture* nil)
+(defparameter *sprite* nil)
 
 ;; Run this once before the next on-idle call.
 (clinch:defevent clinch:*next* ()
@@ -82,47 +119,15 @@
   ;; (setf *shader-program* (make-shader-program))
   
   ;; create the triangle entity. 
-  (setf *texture* 
+  (let ((texture 
 	(clinch::make-texture-from-file 
-	 "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg"))
-  (let ((w (clinch:width *texture*))
-	(h (clinch:height *texture*)))
-
-    (setf *triangle*
-	  (make-instance 'clinch:entity
-			 :shader-program (clinch:get-generic-single-texture-shader)
-			 :indexes (make-instance 'clinch:index-buffer :data '(0 1 2
-									      0 2 3))       ;; Add the index buffer
-			 :attributes   `(("v" . ,(make-instance 'clinch:buffer 
-								:Stride 3
-								:data (map 'list (lambda (x)
-										   (coerce x 'single-float))
-									   (list (- w)   h 0.0
-									     (- w)  (- h) 0.0
-									     w  (- h) 0.0
-									     w   h 0.0))))
-					 ("tc1" . ,(make-instance 'clinch:buffer 
-								  :Stride 2
-								  :data (map 'list (lambda (x)
-										     (coerce x 'single-float))
-									     '(0.0   1.0
-									       0.0   0.0
-									       1.0   0.0
-									       1.0   1.0)))))
-			 :uniforms   `(("M". :model)
-				       ("P" . :projection)
-				       ;;("t1" . :place-holder)
-				       ))))
-
-  
-  
-  (setf (clinch:uniform *triangle* "t1") *texture*)
-  (setf (clinch:uniform *triangle* "ambientTexture") *texture*))
+	 "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg")))
+    (setf *sprite* (make-instance 'sprite :texture texture))))
 
 ;; Create an on-idle envent handler.
 (clinch:defevent clinch:*on-idle* ()
   (gl:clear :color-buffer-bit :depth-buffer-bit)
-  (clinch:render *triangle* :projection clinch:*ortho-projection*))
+  (clinch:render (sprite-entity *sprite*) :projection clinch:*ortho-projection*))
 
 ;; Start the window.
 (clinch:init :init-controllers nil)
