@@ -35,6 +35,8 @@
 	       		     "tile"
 	       		     "root"
 	       		     "export"))
+	       (:file "obj")
+	       
 	       (:file "sprite"
 	       	:depends-on ("tileset"))
 	       (:file "engine"
