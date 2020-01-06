@@ -93,13 +93,9 @@
   												      1.0   0.0
   												      1.0   1.0)))))
   						:uniforms   `(("M". :model)
-  							      ("P" . :projection)
-  							      ;;("t1" . :place-holder)
-  							      ))))
+  							      ("P" . :projection)))))
   (setf (clinch:uniform (sprite-entity new-sprite) "t1") texture)
-  (setf (clinch:uniform (sprite-entity new-sprite) "ambientTexture") texture))
-  
-  
+  (setf (clinch:uniform (sprite-entity new-sprite) "ambientTexture") texture))  
 
 (clinch:defevent clinch:*on-window-resized* (win width height ts)
   ;; redo the projection matrix here
