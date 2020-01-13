@@ -42,3 +42,10 @@
   							      ("P" . :projection)))))
   (setf (clinch:uniform (sprite-entity new-sprite) "t1") texture)
   (setf (clinch:uniform (sprite-entity new-sprite) "ambientTexture") texture))
+
+(defgeneric render (entity))
+
+(defmethod render ((entity sprite))
+  (clinch:render (sprite-entity entity ) :projection clinch:*ortho-projection*))
+
+(export 'render)

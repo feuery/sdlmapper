@@ -59,7 +59,7 @@
 
 (defvar-export! do-schedule-lambda nil)
 
-(defvar-export! render nil)
+;;(defvar-export! render nil)
 (defvar-export! add-lambda-to-drawingqueue nil)
 (defvar-export! clear-lisp-drawingqueue nil)
 (defvar-export! set-img-rotation nil)
@@ -76,7 +76,8 @@
   (funcall cpp-hittool-chosen))
 
 (defun-export! render-img (dst img)
-  (funcall render dst img))
+  nil ;; (funcall render dst img)
+  )
 
 (defvar-export! c_sleep nil);
 (defun-export! ms-sleep (ms)

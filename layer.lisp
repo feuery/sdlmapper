@@ -1,6 +1,6 @@
 (defpackage :qmapper.layer
   (:use :common-lisp
-        :cl-arrows
+   :cl-arrows
 	:qmapper.export
 	:qmapper.std
 	:qmapper.tile)
@@ -31,8 +31,7 @@
     all-tiles))
 
 (defun-export! make-tiles (w h)
-  (make-2d w h (make-Tile :x 0 :y 0 :tileset 0 :rotation 0
-			  :gl-key nil)))
+  (make-2d w h (make-Tile :x 0 :y 0 :tileset 0 :rotation 0)))
 
 (defun-export! make-hitlayer (w h)
   (make-2d w h t))
@@ -47,8 +46,7 @@
   (let ((width (layer-width layer)))
     (reduce (lambda (layer i)
 	      (update-prop-in layer (list "TILES" i) (lambda (tiles)
-						       (fset:with-first tiles (make-tile :x 0 :y 0 :tileset 0 :rotation 0
-											 :gl-key nil)))))
+						       (fset:with-first tiles (make-tile :x 0 :y 0 :tileset 0 :rotation 0)))))
 	    (mapcar #'dec (range width)) :initial-value layer)))
 
 ;;      ;; horizontal-growth: cons to end a list of tiles with the length of (map-height map)
@@ -56,7 +54,7 @@
 (defun-export! grow-layer-horizontally (layer)
   (update-prop layer "TILES" (lambda (tiles)
 			       (let ((list-len (fset:size (fset:first tiles))))
-				 (fset:with-last tiles (list-of (make-tile :x 0 :y 0 :tileset  0 :rotation 0 :gl-key  nil) list-len))))))
+				 (fset:with-last tiles (list-of (make-tile :x 0 :y 0 :tileset  0 :rotation 0) list-len))))))
 
 (defun-export! shrink-layer-horizontally (layer)
   (update-prop layer "TILES" #'fset:less-last))

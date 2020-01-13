@@ -12,6 +12,6 @@
     (y 0)
     (tileset 0) 
     (rotation 0)
-    (gl-key nil))))
+    (sprite nil))))
 
 ;; (export-all :qmapper.tile)

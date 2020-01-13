@@ -444,6 +444,7 @@
   (assert (stringp sym))
   (read-from-string sym))
 
+;; you can't assoc stuff to a clos object (like you'd do to those "objects" (fset maps) this macro produces or clojure's maps), thus this is a relevant hack - but a hack nonetheless
 (defmacro-export! defcppclass (classname &rest rst)
   (let* ((visibility-stripped (apply #'append
 				     (mapcan #'cdr rst)))
@@ -666,6 +667,9 @@ and
      (if ,(car bindings)
 	 ,then
 	 ,else)))
+
+(defmacro-export! when-let (bindings &rest then)
+  `(if-let ,bindings (progn ,@then)))
 
 ;; (condp equalp "Lollero"
        

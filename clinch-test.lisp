@@ -89,7 +89,7 @@
 ;; Create an on-idle envent handler.
 (clinch:defevent clinch:*on-idle* ()
   (gl:clear :color-buffer-bit :depth-buffer-bit)
-  (clinch:render (qmapper.obj:sprite-entity *sprite*) :projection clinch:*ortho-projection*))
+  (qmapper.obj:render *sprite*))
 
 ;; Start the window.
 (clinch:init :init-controllers nil)

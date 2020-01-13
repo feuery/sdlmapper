@@ -5,7 +5,8 @@
 	:cl-arrows
 	:qmapper.std
 	:qmapper.tileset
-	:qmapper.root))
+	:qmapper.root
+	:qmapper.obj))
 
 (in-package :qmapper.sprite)
 

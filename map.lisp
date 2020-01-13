@@ -291,8 +291,8 @@
                       (apply function (append args (list index))))
            (append (list list) more-lists))))
 
-(defun set-image-subobject (dst tile subtile)
-  (funcall set-img-subobj dst (tile-gl-key tile) (tile-gl-key subtile)))
+;; (defun set-image-subobject (dst tile subtile)
+;;   (funcall set-img-subobj dst (tile-gl-key tile) (tile-gl-key subtile)))
 
 (defun draw-colored-rect (x y r g b a)
   (funcall draw-rect x y r g b a))
@@ -358,36 +358,40 @@
 							      (mapcar (lambda (x)
 									(mapcar (lambda (y)
 										  (if-let (tile (get-tile-at map l x y))
-											  (progn (let ((tile (if (valid-gl-key? (tile-gl-key tile))
-														 tile
-														 (fetch-tile-from-tileset root
-																	  (tile-tileset tile)
-																	  (tile-x tile)
-																	  (tile-y tile))))
-												       (subtile (if (not (zerop index))
-														    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))
-														      (if (valid-gl-key? (tile-gl-key subtile))
-															  subtile
-															  (fetch-tile-from-tileset root
-																		   (tile-tileset subtile)
-																		   (tile-x subtile)
-																		   (tile-y subtile)))))))
+										    (progn (let* ((sprite (tile-sprite tile))
+												  (tile (if sprite
+													    tile
+													    (when-let (tile (fetch-tile-from-tileset root
+																		     (tile-tileset tile)
+																		     (tile-x tile)
+																		     (tile-y tile)))
+													      (assert (string= (q-type-of (qmapper.tile:make-tile)) "TILE"))
+													      tile)))
+												  ;; (subtile (if (not (zerop index))
+												  ;; 		    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))
+												  ;; 		      (if (valid-gl-key? (tile-gl-key subtile))
+												  ;; 			  subtile
+												  ;; 			  (fetch-tile-from-tileset root
+												  ;; 						   (tile-tileset subtile)
+												  ;; 						   (tile-x subtile)
+												  ;; 						   (tile-y subtile))))))
+												  )
 												   
 												   (when tile
 												     (let ((rotation (tile-rotation tile))
-													   (gl-key (tile-gl-key tile)))
-												       (if (valid-gl-key? gl-key)
+													   (sprite (or sprite (tile-sprite tile))))
+												       (if sprite
 													   (progn
-													     (set-image-x :MAP tile (* 50 x))
-													     (set-image-y :MAP tile (* 50 y))
-													     (set-image-opacity :MAP tile (get-prop layer "opacity"))
-													     (set-image-rotation :MAP tile (deg->rad rotation))
+													     (set-image-x :MAP sprite (* 50 x))
+													     (set-image-y :MAP sprite (* 50 y))
+													     (set-image-opacity :MAP sprite (get-prop layer "opacity"))
+													     (set-image-rotation :MAP sprite (deg->rad rotation))
 
 
-													     (when subtile
-													       (set-image-subobject :MAP tile subtile))
+													     ;; (when subtile
+													     ;;   (set-image-subobject :MAP tile subtile))
 													     
-													     (render-img :MAP gl-key))))))
+													     (render-img :MAP sprite))))))
 												 (if (and (hit-tool-chosen?)
 													  (string= "MAP VIEW" renderer-name))
 												     
