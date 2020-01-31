@@ -7,7 +7,7 @@
   :license  "Specify license here"
   :version "0.0.1"
   :serial t
-  :depends-on (#:clinch #:cl-arrows #:clinch-freeimage #:fset #:rutils #:cl-strings #:cl-ppcre #:usocket #:bordeaux-threads #:cl-fad)
+  :depends-on (#:clinch #:cl-arrows #:clinch-freeimage #:fset #:rutils #:cl-strings #:cl-ppcre #:usocket #:bordeaux-threads #:cl-fad #:sdl2 #:sdl2-image)
   :components ((:file "export")
 	       (:file "qmapper_std")
 	       (:file "script"

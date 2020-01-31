@@ -81,10 +81,8 @@
   ;; (setf *shader-program* (make-shader-program))
   
   ;; create the triangle entity. 
-  (let ((texture 
-	(clinch::make-texture-from-file 
-	 "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg")))
-    (setf *sprite* (make-instance 'qmapper.obj:sprite :texture texture))))
+  (let ((texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg"))
+    (setf *sprite* (make-instance 'qmapper.obj:sprite :texture-path texture-path))))
 
 ;; Create an on-idle envent handler.
 (clinch:defevent clinch:*on-idle* ()
@@ -93,3 +91,5 @@
 
 ;; Start the window.
 (clinch:init :init-controllers nil)
+;; (clinch:init :init-controllers nil)
+;; (clinch:init :init-controllers nil)
