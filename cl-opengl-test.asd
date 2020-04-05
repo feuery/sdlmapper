@@ -1,13 +1,13 @@
 ;;;; clinch-test.asd
 
 
-(asdf:defsystem #:clinch-test
-  :description "Describe clinch-test here"
+(asdf:defsystem #:cl-opengl-test
+  :description "Describe cl-opengl-test here"
   :author "Feuer <feuer@feuerx.net>"
   :license  "Specify license here"
   :version "0.0.1"
   :serial t
-  :depends-on (#:clinch #:cl-arrows #:clinch-freeimage #:fset #:rutils #:cl-strings #:cl-ppcre #:usocket #:bordeaux-threads #:cl-fad #:sdl2 #:sdl2-image)
+  :depends-on (#:cl-arrows #:fset #:rutils #:cl-strings #:cl-ppcre #:usocket #:bordeaux-threads #:cl-fad #:sdl2 #:sdl2-image)
   :components ((:file "export")
 	       (:file "qmapper_std")
 	       (:file "script"
@@ -30,12 +30,12 @@
   	       (:file "engine_events"
 		:depends-on ("qmapper_std"
 			     "export"))
-  	       (:file "tileset"
+  	       (:file "obj" :depends-on ("qmapper_std"))
+	       (:file "tileset"
 	       	:depends-on ("qmapper_std"
 	       		     "tile"
 	       		     "root"
 	       		     "export"))
-	       (:file "obj")
 	       
 	       (:file "sprite"
 	       	:depends-on ("tileset"))
@@ -64,6 +64,10 @@
 			     "script"
 			     "export"
 			     "root"))
+	       (:file "editor_server"
+		:depends-on ("qmapper_std"
+			     "tileset"
+			     "doc-server"))
 	       
 	       (:file "animatedsprite"
 	       	:depends-on ("qmapper_std"
@@ -96,4 +100,4 @@
 	       		     "root"
 	       		     "map"))
 	       (:file "package")
-	       (:file "clinch-test")))
+	       (:file "cl-opengl-test")))

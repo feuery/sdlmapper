@@ -2,6 +2,7 @@
   (:use :common-lisp
 	:cl-arrows
 	:qmapper.std
+	:qmapper.obj
 	:qmapper.export
 	:qmapper.root
 	:qmapper.tile)
@@ -55,6 +56,8 @@
   (format t "Selecting tileset~%")
   (select-tileset-to-draw tileset)
   (assert (not (consp tileset))))
+
+;; TODO me voidaan tehdä copy-img cl-sdl2:n sdl2:blit-surfacella ja käsittelemällä sdl_surfaceja kuin aikoinaan qimageja, jotka sitten muutetaan ogl-tekstuureiksi kun tarve on
   				 
 (defun-export! load-tilesetless-texture-splitted (path &key (tile-width 50) (tile-height 50))
   (let* ((root-img (load-img path))
@@ -78,8 +81,9 @@
 (defun-export! load-texture-splitted (path)
   (let* ((root-img (load-img path))
 	 (_ (format t "img loaded~%"))
-  	 (w (/ (img-width root-img) 50))
-  	 (h (/ (img-height root-img) 50))
+	 (_ (assert (> (img-width root-img) 0)))
+  	 (w (/ (width root-img) 50))
+  	 (h (/ (height root-img) 50))
 	 (_ (format t "dimensions found~%"))
 	 (textures (mapcar (lambda (x)
   			     (mapcar (lambda (y)
@@ -105,10 +109,10 @@
 
 (defun-export! load-tileset (path)
   (format t "Going into load-tileset~%")
-  (schedule-once :TILESET (lambda ()
-			    (multiple-value-bind (tiles w h) (load-texture-splitted path)
-			      (format t "Loaded tile textures, going to make tileset ~%")
-			      (let* ((tileset (make-tileset :name "New tileset" :tiles tiles :w w :h h))
-				     (result (push-tileset *document* tileset)))
-				(format t "set-docing result~%")
-				(set-doc result ))))))
+  (multiple-value-bind (tiles w h) (load-texture-splitted path)
+    (format t "Tiles: ~a~%" tiles)
+    (format t "Loaded tile textures, going to make tileset ~%")
+    (let* ((tileset (make-tileset :name "New tileset" :tiles tiles :w w :h h))
+	   (result (push-tileset *document* tileset)))
+      (format t "set-docing result~%")
+      (set-doc result ))))

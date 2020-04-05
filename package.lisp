@@ -1,4 +1,4 @@
 ;;;; package.lisp
 
-(defpackage #:clinch-test
+(defpackage #:cl-opengl-test
   (:use #:cl))

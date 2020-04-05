@@ -1,64 +1,63 @@
 (defpackage #:qmapper.obj
   (:use #:cl
-	#:cl-arrows))
+   :qmapper.std
+   #:cl-arrows)
+  (:export :create-subsprite :angle :opacity :sprite-surface :position :draw :create-sprite))
 
 (in-package #:qmapper.obj)
 
 (defclass sprite ()
-  ((texture :accessor sprite-texture)
-   (entity :accessor sprite-entity)
-   (projection :accessor sprite-projection)))
+  ((position :accessor sprite-position)
+   ;; in pixels
+   (size :accessor sprite-size)
+   ;; in degrees
+   (angle :accessor sprite-angle)
+   ;; the error color used when can't render surface (I guess)
+   (color :accessor sprite-color)
+   ;; 255...0, opaque...translucent
+   (opacity :accessor sprite-opacity)
+   ;; we have to keep hold of this for subobject purposes
+   (surface :accessor sprite-surface)
+   ;; "HW-accelerated" version of the above
+   (texture :accessor sprite-texture)))
 
-(export 'sprite)
-(export 'sprite-entity)
-(export 'sprite-texture)
-(export 'sprite-projection)
+(defmethod initialize-instance :after ((obj sprite) &key sdl-surface renderer)
+  (with-slots (position size angle color opacity surface texture) obj
+    (setf surface sdl-surface
+	  texture (sdl2:create-texture-from-surface renderer sdl-surface)
+	  position (list 0 0)
+	  size (list (sdl2:surface-width sdl-surface)
+		     (sdl2:surface-height sdl-surface))
+	  angle 0
+	  color (list 0 0 255)
+	  opacity 255)
+    (sdl2:set-texture-blend-mode texture :blend)))
 
-(defun surface->texture (surface)
-  (make-instance 'clinch:texture
-		   :data (sdl2:surface-pixels surface)
-		   :width  (sdl2:surface-width surface)
-		   :height (sdl2:surface-height surface)
-		   :stride 4
-		   :format :rgb
-		   :qtype  :unsigned-char))
+(defgeneric draw (drawable &key))
+(defmethod draw ((obj sprite) &key renderer)
+  (with-slots (position texture size opacity angle) obj
+    (sdl2:with-rects ((dst-rect (car position) (cadr position)
+				(car size) (cadr size)))
+      (sdl2:set-texture-alpha-mod texture  opacity)
+      (sdl2:render-copy-ex renderer texture :dest-rect dst-rect
+      			   :angle angle))))
 
-(defmethod initialize-instance :after ((new-sprite sprite) &key texture-path)
-  (let* ((sdl-surface (sdl2-image:load-image texture-path))
-	 (texture (surface->texture sdl-surface)) ;; (clinch::make-texture-from-file texture-path))
-	 (w (clinch:width texture))
-	 (h (clinch:height texture)))
-    (setf *surface* sdl-surface)
-    (setf (sprite-texture new-sprite) texture)
-    (setf (sprite-entity new-sprite) (make-instance 'clinch:entity
-						    :shader-program (clinch:get-generic-single-texture-shader)
-						    :indexes (make-instance 'clinch:index-buffer :data '(0 1 2
-													 0 2 3))       ;; Add the index buffer
-						    :attributes   `(("v" . ,(make-instance 'clinch:buffer 
-											   :Stride 3
-											   :data (map 'list (lambda (x)
-													      (coerce x 'single-float))
-												      (list (- w)   h 0.0
-													    (- w)  (- h) 0.0
-													    w  (- h) 0.0
-													    w   h 0.0))))
-								    ("tc1" . ,(make-instance 'clinch:buffer 
-											     :Stride 2
-											     :data (map 'list (lambda (x)
-														(coerce x 'single-float))
-													'(0.0   1.0
-													  0.0   0.0
-													  1.0   0.0
-													  1.0   1.0)))))
-						    :uniforms   `(("M". :model)
-								  ("P" . :projection))))
-    (setf (clinch:uniform (sprite-entity new-sprite) "t1") texture)
-    (setf (clinch:uniform (sprite-entity new-sprite) "ambientTexture") texture)
-    new-sprite))
+(defun xor (&rest args)
+  (flet ((xor2 (a b) (not (eq (not a) (not b)))))
+    (cond ((null args)  t)
+          ((null (cdr args)) (car args))
+          (t (apply (function xor) (xor2 (car args) (cadr args)) (cddr args))))))
 
-(defgeneric render (entity))
+(defun create-sprite (&key texture-path renderer surface)
+  (assert (xor texture-path surface))
+  (cond (texture-path (make-instance 'sprite :sdl-surface (sdl2-image:load-image texture-path) :renderer renderer))
+	(surface (make-instance 'sprite :sdl-surface surface :renderer renderer))))
 
-(defmethod render ((entity sprite))
-  (clinch:render (sprite-entity entity ) :projection clinch:*ortho-projection*))
+(defun create-subsprite (src-sprite rect renderer)
+  "Copies a rect from src-sprite. Rect is a list with params: (x y w h)"
+  (with-slots (size surface) src-sprite
+    (sdl2:with-rects ((real-rect (first rect) (second rect) (third rect) (fourth rect)))
+      (let ((subsurface (sdl2:create-rgb-surface (third rect) (fourth rect) 32)))
+	(sdl2:blit-surface surface real-rect subsurface nil)
 
-(export 'render)
+	(create-sprite :renderer renderer :surface subsurface)))))

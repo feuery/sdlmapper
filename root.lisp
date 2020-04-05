@@ -37,16 +37,21 @@
   (funcall set-img-opacity (symbol-name dst) (get-prop img "GL-KEY") op))
 
 (defun-export! load-img (path)
-  (funcall load-image path))
+  (error 'fix))
+  ;;(clinch:make-texture-from-file path))
 
 (defun-export! img-width (img)
-  (funcall image-w img))
+    (error 'fix))
+  ;;(clinch:width img))
 
 (defun-export! img-height (img)
-  (funcall image-h img))
+    (error 'fix))
+  ;;(clinch:height img))
 
 (defun-export! copy-img (img x y w h)
-  (funcall copy-image img x y w h))
+    (error 'fix))
+  ;;(cl-freeimage:freeimage-copy img x y
+;; (+ x w) (+ y h)))
 
 (defun-export! add-to-drawqueue (img dst-key)
   (let ((i (get-prop img "GL-KEY")))
@@ -378,6 +383,7 @@
 
 (defvar *document-hooks* '())
 (defvar *undo-stack* '())
+
 
 (defun-export! set-doc (doc)
   (assert (not (functionp doc)))

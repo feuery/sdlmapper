@@ -15,7 +15,7 @@
 
 ;; pohja lainattu https://gist.github.com/traut/6bf71d0da54493e6f22eb3d00671f2a9
 
-(defun send-text-to-socket (text socket)
+(defun-export! send-text-to-socket (text socket)
   (let ((socket-stream (usocket:socket-stream socket)))
     (format
       socket-stream
@@ -27,7 +27,7 @@
   (apply 'format (append (list t (concatenate 'string text "~%")) args)))
 
 
-(defun close-socket (socket)
+(defun-export! close-socket (socket)
   "Close a socket without raising an error if something goes wrong"
   (handler-case
       (usocket:socket-close socket)
@@ -35,8 +35,16 @@
       (logger "ignoring the error that happened while trying to close socket: ~a" e)))
   (logger "socket closed"))
 
+(defun doc-server-processor (client-socket socket-stream message)
+  (multiple-value-bind (protocol result) (eval-protocol-row socket-stream message)
+      (format t "procol is ~a~%" protocol)
+      (if (string= protocol "NS")
+	  (format (socket-stream client-socket) "~a" result)
+	  (when (string= protocol "SAVE-NS")
+	    (set-doc result)
+	    (format t "doc set!")))))
 
-(defun run-tcp-server (port)
+(defun-export! run-tcp-server (port)
   "Run TCP server in a loop, listening to incoming connections.
   This is single-threaded version. Do NOT call this in REPL, in qmapper this'll
   be wrapped inside a QThread"
@@ -48,7 +56,7 @@
 	(if-let (socket (socket-accept master-socket :element-type 'character))
           (progn
 	    (format t "client accepted~%")
-	    (process-client-socket socket)
+	    (process-client-socket socket #'doc-server-processor)
 	    (socket-close socket)))))))
 
 (defun-export! run-tcp-server-threaded (port)
@@ -102,16 +110,12 @@
 				   (assert contents)
 				   (root-savens *document* ns contents))))))))
 
-(defun process-client-socket (client-socket)
+(defun process-client-socket (client-socket actual-processor)
   "Process client socket that got some activity"
   (format t "processing client-socket ~%")
   (let* ((socket-stream (usocket:socket-stream client-socket))
 	 (message (read-line socket-stream)))
     (logger "got a message: ~a" message)
-    (multiple-value-bind (protocol result) (eval-protocol-row socket-stream message)
-      (format t "procol is ~a~%" protocol)
-      (if (string= protocol "NS")
-	  (format (socket-stream client-socket) "~a" result)
-	  (when (string= protocol "SAVE-NS")
-	    (set-doc result)
-	    (format t "doc set!"))))))
+    (funcall actual-processor client-socket socket-stream message)))
+
+(export 'process-client-socket)
