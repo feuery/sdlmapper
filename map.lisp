@@ -1,5 +1,6 @@
 (defpackage :qmapper.map
   (:use :common-lisp
+	:qmapper.obj
 	:cl-arrows
 	:cl-fad
 	:qmapper.std
@@ -12,8 +13,9 @@
 	:qmapper.root
 	:qmapper.export
 	:qmapper.tile)
-  (:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
-  (:import-from :fset :size :convert))
+  ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
+					;(:import-from :fset :size :convert)
+  )
 
 (in-package :qmapper.map)
 
@@ -28,6 +30,7 @@
        (first)
        (last)))
 
+;; tää ei toimi
 (defun-export! invert-hit-tile (map x y)
   ;; get-prop-in is a bit stupid and coerces nils to #[ ], of which #'not doesn't understand anything
   (update-prop-in map (list "HIT-LAYER" x y) (lambda (hit-obj)
@@ -35,6 +38,7 @@
 						   t
 						   (not hit-obj)))))
 
+;; tääkään ei toimi
 (defun-export! invert-hit-tile-in-chosen-map (root x y)
   (update-prop-in root (list "MAPS" (root-chosenmap root))
 		  (lambda (map)
@@ -43,43 +47,28 @@
 (defun boolp (b &rest rst)
   (typep b 'boolean))
 
-(defcppclass Map
-    (public 
-     (properties
-      (name "Map 1")
-      (layers '())
-      (sprites '())
-      (animatedSprites '())
-      (hit-layer '())
-      (scripts-to-run '())
-      (has-gravity? nil #'boolp))
-     (functions
-      (findNearest (x y)
-		   ;; Let's search the nearest animatedsprite or sprite
-		   (let* ((lst  (->> (map-sprites *this*)
-				     (convert 'list)
-				     (concatenate 'list 
-						  (convert 'list (map-animatedSprites *this*)))
-				     (mapcar (lambda (sprite-id)
-					       (or 
-						(get-prop (root-sprites *document*) sprite-id)
-						(get-prop (root-animatedSprites *document*) sprite-id)))))))
-		     (car (find-nearest x y lst))))
-      (height ()
-	      (format t "Calling deprecated map-height~%")
-	      (qmapper.root:true-map-height *this*))
-      (width ()
-	     (format t "Calling deprecated map-width~%")
-	     (qmapper.root:true-map-width *this*))
-      ;; this'll be fun
-      (resize (w
-	       h
-	       vAnchor
-	       hAnchor)
-	      ;; TODO IMPLEMENT
-	      (error "Don't call Map-resize yet!")))))
+(defclass qmap ()
+  ((name :accessor map-name :initform "Map 1")
+   (layers :accessor map-layers :initform '())
+   (sprites :accessor map-sprites :initform '())
+   (animatedSprites :accessor map-animatedSprites :initform '())
+   (hit-layer :accessor map-hit-layer :initform '())
+   (scripts-to-run :accessor map-scripts-to-run :initform '())
+   (has-gravity? :accessor map-has-gravity? :initform nil))) ;;validator  #'boolp))
 
+(defun map-findNearest (x y)
+  ;; Let's search the nearest animatedsprite or sprite
+  (let* ((lst  (->> (map-sprites *this*)
+		    (convert 'list)
+		    (concatenate 'list 
+				 (convert 'list (map-animatedSprites *this*)))
+		    (mapcar (lambda (sprite-id)
+			      (or 
+			       (get-prop (root-sprites *document*) sprite-id)
+			       (get-prop (root-animatedSprites *document*) sprite-id)))))))
+    (car (find-nearest x y lst))))
 
+      
 
 (defun-export! make-map-with-layers (doc name w h layer-count)
   (let* ((layers (repeatedly (lambda (i)
@@ -262,19 +251,6 @@
 		      (alist-update map-index (lambda (m)
 						(set-Map-layers! m (drop-list-i (Map-layers m) layer-index)))))))
 
-;; I hope putting those lambdas here too will keep them from being collected
-(defvar *lisp-dq-buffer* (list))
-
-(defun-export! clear-lisp-dq (dst)
-  (setf *lisp-dq-buffer* (list))
-  (funcall clear-lisp-drawingqueue (symbol-name dst)))
-
-(defun-export! add-to-lisp-qd (dst fn)
-  ;; doesn't work on sbcl
-  ;; (ext:set-finalizer fn (lambda (x)
-  ;; 			  (format t "Finalizing lisp-dq-element ~a~%" x)))
-  (setf *lisp-dq-buffer* (cons fn *lisp-dq-buffer*))
-  (funcall add-lambda-to-drawingqueue dst fn))
 
 (defun deg->rad (deg)
   (/ (* pi deg) 180))
@@ -295,7 +271,9 @@
 ;;   (funcall set-img-subobj dst (tile-gl-key tile) (tile-gl-key subtile)))
 
 (defun draw-colored-rect (x y r g b a)
-  (funcall draw-rect x y r g b a))
+  (error 'not-implemented)
+  ;; (funcall draw-rect x y r g b a)
+  )
 
 (defun save-and-load-tmp! (contents)
   "Saves the parameter as a file in /tmp and tries to (load) it. This tries to hack around CL's eval not knowing where just-imported symbols should be imported from"
@@ -325,109 +303,105 @@
     (set-map-renderer-fn :ENGINE map-id)
     (set-engine-doc (set-root-chosenmap! engine-doc map-id))))
 
-(defun-export! set-map-renderer-fn (dst map-id)
-  (add-to-lisp-qd dst (lambda (renderer-name)
-			;; (format t "renderer name is ~a~%" renderer-name)
-			(setf map-id (root-chosenmap *document*))
-			;; (setf root-maps (root-maps *document*))
-		        (if-let (*local-document* (if (equalp dst :ENGINE)
-						      *engine-document*
-						      qmapper.root:*document*))
-				(let* ((root *local-document*)
-				       (map (get-prop (root-maps root) (root-chosenmap root)))
-				       (hitdata (map-hit-layer map))
-				       (w (true-map-width map))
-				       (h (true-map-height map))
-				       (x-coords (mapcar #'dec (range w)))
-				       (y-coords (mapcar #'dec (range h)))
-				       (layer-list (map-layers map))
-				       (layers (size layer-list))
-				       (l-coords (reverse (mapcar #'dec (range layers))))
-				       (sprites (map-sprites map))
-				       (root-sprites (root-sprites *local-document*))
-				       (animations (map-animatedsprites map))
-				       (root-animations (root-animatedsprites *local-document*))
-				       (final-l-coords (->> l-coords
-							    (remove-if-not (lambda (l-index)
-									     (let ((layer (get-layer root map l-index)))
-									       (layer-visible layer)))))))
-				  
-				  (->> final-l-coords
-				       (mapcar-with-index (lambda (l index)
-							    (let ((layer (get-prop (root-layers root) (get-prop layer-list l))))
-							      (mapcar (lambda (x)
-									(mapcar (lambda (y)
-										  (if-let (tile (get-tile-at map l x y))
-										    (progn (let* ((sprite (tile-sprite tile))
-												  (tile (if sprite
-													    tile
-													    (when-let (tile (fetch-tile-from-tileset root
-																		     (tile-tileset tile)
-																		     (tile-x tile)
-																		     (tile-y tile)))
-													      (assert (string= (q-type-of (qmapper.tile:make-tile)) "TILE"))
-													      tile)))
-												  ;; (subtile (if (not (zerop index))
-												  ;; 		    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))
-												  ;; 		      (if (valid-gl-key? (tile-gl-key subtile))
-												  ;; 			  subtile
-												  ;; 			  (fetch-tile-from-tileset root
-												  ;; 						   (tile-tileset subtile)
-												  ;; 						   (tile-x subtile)
-												  ;; 						   (tile-y subtile))))))
-												  )
-												   
-												   (when tile
-												     (let ((rotation (tile-rotation tile))
-													   (sprite (or sprite (tile-sprite tile))))
-												       (if sprite
-													   (progn
-													     (set-image-x :MAP sprite (* 50 x))
-													     (set-image-y :MAP sprite (* 50 y))
-													     (set-image-opacity :MAP sprite (get-prop layer "opacity"))
-													     (set-image-rotation :MAP sprite (deg->rad rotation))
+(defmethod draw ((map qmap) &key renderer dst (x 0) (y 0))
+  (if-let (*local-document* (if (equalp dst :ENGINE)
+				*engine-document*
+				qmapper.root:*document*))
+    (let* ((root *local-document*)
+	   (map (get-prop (root-maps root) (root-chosenmap root)))
+	   (hitdata (map-hit-layer map))
+	   (w (true-map-width map))
+	   (h (true-map-height map))
+	   (x-coords (mapcar #'dec (range w)))
+	   (y-coords (mapcar #'dec (range h)))
+	   (layer-list (map-layers map))
+	   (layers (size layer-list))
+	   (l-coords (reverse (mapcar #'dec (range layers))))
+	   (sprites (map-sprites map))
+	   (root-sprites (root-sprites *local-document*))
+	   (animations (map-animatedsprites map))
+	   (root-animations (root-animatedsprites *local-document*))
+	   (final-l-coords (->> l-coords
+				(remove-if-not (lambda (l-index)
+						 (let ((layer (get-layer root map l-index)))
+						   (layer-visible layer)))))))
+      
+      (->> final-l-coords
+	   (mapcar-with-index (lambda (l index)
+				(let ((layer (get-prop (root-layers root) (get-prop layer-list l))))
+				  (mapcar (lambda (x)
+					    (mapcar (lambda (y)
+						      (if-let (tile (get-tile-at map l x y))
+							(progn (let* ((sprite (tile-sprite tile))
+								      (tile (if sprite
+										tile
+										(when-let (tile (fetch-tile-from-tileset root
+															 (tile-tileset tile)
+															 (tile-x tile)
+															 (tile-y tile)))
+										  (assert (string= (q-type-of (qmapper.tile:make-tile)) "TILE"))
+										  tile)))
+								      ;; (subtile (if (not (zerop index))
+								      ;; 		    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))
+								      ;; 		      (if (valid-gl-key? (tile-gl-key subtile))
+								      ;; 			  subtile
+								      ;; 			  (fetch-tile-from-tileset root
+								      ;; 						   (tile-tileset subtile)
+								      ;; 						   (tile-x subtile)
+								      ;; 						   (tile-y subtile))))))
+								      )
+								 
+								 (when tile
+								   (let ((rotation (tile-rotation tile))
+									 (sprite (or sprite (tile-sprite tile))))
+								     (if sprite
+									 (progn
+									   (set-image-x :MAP sprite (* 50 x))
+									   (set-image-y :MAP sprite (* 50 y))
+									   (set-image-opacity :MAP sprite (get-prop layer "opacity"))
+									   (set-image-rotation :MAP sprite (deg->rad rotation))
 
 
-													     ;; (when subtile
-													     ;;   (set-image-subobject :MAP tile subtile))
-													     
-													     (render-img :MAP sprite))))))
-												 (if (and (hit-tool-chosen?)
-													  (string= "MAP VIEW" renderer-name))
-												     
-												     (let* ((hit-tile (get-prop-in hitdata (list x y)))
-													    (hit-tile (if (equalp hit-tile (fset:seq))
-															  nil
-															  hit-tile)))
-												       
-												       (draw-colored-rect (* x 50)
-															  (* y 50)
-															  (if hit-tile
-															      0
-															      255)
-															  (if hit-tile
-															      255 0)
-															  0
-															  127))))))
-										y-coords))
-								      x-coords)))))
+									   ;; (when subtile
+									   ;;   (set-image-subobject :MAP tile subtile))
+									   
+									   (render-img :MAP sprite))))))
+							       (if (and (hit-tool-chosen?)
+									(string= "MAP VIEW" renderer-name))
+								   
+								   (let* ((hit-tile (get-prop-in hitdata (list x y)))
+									  (hit-tile (if (equalp hit-tile (fset:seq))
+											nil
+											hit-tile)))
+								     
+								     (draw-colored-rect (* x 50)
+											(* y 50)
+											(if hit-tile
+											    0
+											    255)
+											(if hit-tile
+											    255 0)
+											0
+											127))))))
+						    y-coords))
+					  x-coords)))))
 
-				  (dolist (sprite-id (convert 'list sprites))
-				    (let ((sprite (get-prop root-sprites sprite-id)))
-				      (sprite-render sprite)))
+      (dolist (sprite-id (convert 'list sprites))
+	(let ((sprite (get-prop root-sprites sprite-id)))
+	  (sprite-render sprite)))
 
-				  (dolist (animation-id (convert 'list animations))
-				    (let ((anim (-> (get-prop root-animations animation-id)
-						    animatedsprite-advanceframeifneeded!)))
-				      ;; a surprising skip of the set-doc, to prevent DoSsing dom tree element
-				      (if (equalp dst :ENGINE)
-					  (setf *engine-document* (set-prop-in *local-document* (list 'animatedSprites (get-prop anim "ID")) anim))
-					  (setf qmapper.root:*document* (set-prop-in *local-document* (list 'animatedSprites (get-prop anim "ID")) anim)))
-				      (animatedsprite-render anim))))))))
+      (dolist (animation-id (convert 'list animations))
+	(let ((anim (-> (get-prop root-animations animation-id)
+			animatedsprite-advanceframeifneeded!)))
+	  ;; a surprising skip of the set-doc, to prevent DoSsing dom tree element
+	  (if (equalp dst :ENGINE)
+	      (setf *engine-document* (set-prop-in *local-document* (list 'animatedSprites (get-prop anim "ID")) anim))
+	      (setf qmapper.root:*document* (set-prop-in *local-document* (list 'animatedSprites (get-prop anim "ID")) anim)))
+	  (animatedsprite-render anim))))))
 
 (defun-export! select-map-layer (root map-id layer-id)
-  (clear-lisp-dq :MAP)
-  (set-map-renderer-fn :MAP map-id)
+  ;;(clear-lisp-dq :MAP)
+  ;;(set-map-renderer-fn :MAP map-id)
   
   (-> root
       (set-root-chosenlayerind! layer-id)
