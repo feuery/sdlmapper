@@ -339,7 +339,7 @@
 															 (tile-tileset tile)
 															 (tile-x tile)
 															 (tile-y tile)))
-										  (assert (string= (q-type-of (qmapper.tile:make-tile)) "TILE"))
+										  (assert (string= (q-type-of (make-instance 'qmapper.tile:tile)) "TILE"))
 										  tile)))
 								      ;; (subtile (if (not (zerop index))
 								      ;; 		    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))

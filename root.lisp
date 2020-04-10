@@ -45,20 +45,20 @@
        (mapcar #'cdr)))    
 
 (defclass root ()
-  ((root-layers :initarg :layers :initform (empty-map))
-   (root-maps :initarg :maps :initform (empty-map))
-   (root-scripts :initarg :scripts :initform (empty-map))
-   (root-tiles :initarg :tiles :initform (empty-map))
-   (root-tilesets :initarg :tilesets :initform (empty-map))
+  ((root-layers :initarg :layers :initform nil)
+   (root-maps :initarg :maps :initform nil)
+   (root-scripts :initarg :scripts :initform nil)
+   (root-tiles :initarg :tiles :initform nil)
+   (root-tilesets :initarg :tilesets :initform nil)
    (root-chosenMap :initarg :chosenMap :initform -1)
    (root-chosenLayerInd :initarg :chosenLayerInd :initform -1)
    (root-chosenTileset :initarg :chosenTileset :initform  0)
-   (root-chosenTile :initarg :chosenTile :initform  (empty-map))
+   (root-chosenTile :initarg :chosenTile :initform  nil)
    (root-StdVertexShader :initarg :StdVertexShader :initform  "defaultVertex")
    (root-StdFragmentShader :initarg :StdFragmentShader :initform  "defaultFragment")
    (root-StdTileviewFragShader :initarg :StdTileviewFragShader :initform  "default.tileView")
-   (root-animatedSprites :initarg :animatedSprites :initform  (empty-map))
-   (root-sprites :initarg :sprites :initform   (empty-map))
+   (root-animatedSprites :initarg :animatedSprites :initform  nil)
+   (root-sprites :initarg :sprites :initform   nil)
    (root-selected-coordinates :initarg :selected-coordinates :initform  (list 0 0 0 0))))
 
 (defun root-get-chosen-map (*this*)
@@ -174,7 +174,7 @@
     (cdr (nth selected-ind (convert 'list (root-tilesets root))))))
 
 (defun-export! init-root! ()
-  (make-root))
+  (make-instance 'root))
 
 (defun-export! select-tile (root tilex tiley)
   (assert root)
@@ -273,7 +273,7 @@
   (assert root)
   (let ((result 
 	 (set-root-scripts! root
-			    (let* ((root-scripts (or (root-scripts root) (empty-map)))
+			    (let* ((root-scripts (root-scripts root))
 				   (_ (format t "root-scripts: ~a~%" root-scripts))
 				   (result (set-prop root-scripts
 						 (get-prop scr "ID")
