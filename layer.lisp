@@ -1,27 +1,22 @@
 (defpackage :qmapper.layer
+  ;; (:import-from :fset :size)
   (:use :common-lisp
    :cl-arrows
 	:qmapper.export
 	:qmapper.std
-	:qmapper.tile)
-  (:import-from :fset :size))
+	:qmapper.tile))
 
 (in-package :qmapper.layer)
 
-(defcppclass Layer
-  (public
-   (properties
-    (name "")
-    (opacity 255)
-    (visible t)
-    (tiles '())
-    ;; (parent nil)
-    )
-   (functions
-    (width ()
-	   (size (Layer-tiles *this*)))
-    (height ()
-	    (size (fset-first (Layer-tiles *this*)))))))
+(defclass layer ()
+  ((name :accessor layer-name :initform "")
+   (opacity :accessor layer-opacity :initform 255)
+   (visible :accessor layer-visible :initform t)
+   (tiles :accessor layer-tiles :initform '())))
+(defun layer-width (*this*)
+  (length (Layer-tiles *this*)))
+(defun layer-height (*this*)
+  (length (first (Layer-tiles *this*))))
 
 (defun-export! make-2d (w h tile-value)
   (let ((all-tiles
@@ -31,7 +26,7 @@
     all-tiles))
 
 (defun-export! make-tiles (w h)
-  (make-2d w h (make-Tile :x 0 :y 0 :tileset 0 :rotation 0)))
+  (make-2d w h (make-instance 'qmapper.tile:tile :x 0 :y 0 :tileset 0 :rotation 0)))
 
 (defun-export! make-hitlayer (w h)
   (make-2d w h t))

@@ -7,10 +7,10 @@
 (in-package :qmapper.tile)
 
 (defclass tile ()
-    ((x :accessor tile-x :initform 0)
-     (y :accessor tile-y :initform 0)
-     (tileset :accessor tile-tileset :initform 0) 
-     (rotation :accessor tile-rotation :initform 0)
-     (sprite :accessor tile-sprite :initform nil)))
+    ((x :initarg :x :accessor tile-x :initform 0)
+     (y :initarg :y :accessor tile-y :initform 0)
+     (tileset :initarg :tileset :accessor tile-tileset :initform 0) 
+     (rotation :initarg :rotation :accessor tile-rotation :initform 0)
+     (sprite :initarg :sprite :accessor tile-sprite :initform nil)))
 
 ;; (export-all :qmapper.tile)
