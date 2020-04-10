@@ -8,21 +8,19 @@
 
 (in-package :qmapper.script)
 
-(defcppclass Script
-    (public
-     (properties
-      (contents "")
-      (name "")
-      (ns "user")
-      (script_type "lisp"))
-     (functions
-      (is-lisp? ()
-		(let ((script-type (Script-script_type *this*)))
-		  ;; (format t "script type: ~a, is it lisp? ~a~%" script-type (equalp script-type 'lisp))
-		  (string= (format nil "~a" script-type) "lisp")))
-      (is-glsl? ()
-		(let ((script-type (Script-script_type *this*)))
-		  (equalp script-type 'glsl))))))
+(defclass script ()
+  ((script-contents :initarg :contents :initform "")
+   (script-name :initarg :name :initform "")
+   (script-ns :initarg :ns :initform "user")
+   (script-script_type :initarg :script_type :initform "lisp")))
+
+(defun script-is-lisp? (*this*)
+  (let ((script-type (Script-script_type *this*)))
+    (string= (format nil "~a" script-type) "lisp")))
+
+(defun script-is-glsl? (*this*)
+  (let ((script-type (Script-script_type *this*)))
+    (equalp script-type 'glsl)))
 
 (defun-export! drop-script-with-ids (scripts ids)
   (format t "Dropping id's ~a from scripts ~a~%" ids scripts)
