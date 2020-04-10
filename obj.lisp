@@ -1,8 +1,9 @@
 (defpackage #:qmapper.obj
   (:use #:cl
-   :qmapper.std
+	:qmapper.std
+	:qmapper.export
    #:cl-arrows)
-  (:export :create-subsprite :angle :opacity :sprite-surface :position :draw :create-sprite))
+  (:export :create-subsprite :angle :sprite-size :opacity :sprite-surface :position :draw :create-sprite :*draw-queue*))
 
 (in-package #:qmapper.obj)
 
@@ -61,3 +62,12 @@
 	(sdl2:blit-surface surface real-rect subsurface nil)
 
 	(create-sprite :renderer renderer :surface subsurface)))))
+
+
+(defparameter *draw-queue* (list))
+
+(defun-export! clear-draw-queue ()
+  (setf *draw-queue* nil))
+
+(defun-export! add-to-drawqueue (img)
+  (push img *draw-queue*))

@@ -1,4 +1,4 @@
 ;;;; package.lisp
 
 (defpackage #:cl-opengl-test
-  (:use #:cl))
+  (:use #:cl #:qmapper.obj))

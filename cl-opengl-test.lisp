@@ -1,9 +1,7 @@
 ;;;; clinch-test.lisp
 
 (in-package #:cl-opengl-test)
-(defparameter *sprite* nil)
 
-(export '*sprite*)
 
 (defun move (obj)
   (with-slots (position) obj
@@ -16,10 +14,10 @@
 (defparameter *fps* 0)
 (defparameter *fps-reset* (sdl2:get-ticks))
 
-(defun idle (renderer sprites)
+(defun idle (renderer draw-queue)
   (sdl2:render-clear renderer)
   
-  (dolist (sprite sprites)
+  (dolist (sprite draw-queue)
     (render sprite renderer))
   
   (sdl2:render-present renderer)
@@ -28,16 +26,16 @@
   (incf *fps*)
 
   (when (> (- (sdl2:get-ticks) *fps-reset*) 1000)
-    (format t "FPS: ~a~%" *fps*)
+;;    (format t "FPS: ~a~%" *fps*)
     (setf *fps* 0)
     (setf *fps-reset* (sdl2:get-ticks))))
 
-(defparameter *sprites* (list))
+;; (push (make-instance 'qmapper.tileset:tileset :tileset-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer *renderer*) *draw-queue*)
 
 (defun event-loop (renderer)
-  ;;(push (qmapper.obj:create-sprite :texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer renderer) *sprites*)
-  (dotimes (i 20)
-    (push (qmapper.obj:create-sprite :texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer *renderer*) *sprites*))
+  ;;(push (qmapper.obj:create-sprite :texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer renderer) *draw-queue*)
+  ;; (dotimes (i 20)
+  ;;   (push (qmapper.obj:create-sprite :texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer *renderer*) *draw-queue*))
   (sdl2:with-event-loop (:method :poll)
     (:keydown (:keysym keysym)
 	      (let ((scancode (sdl2:scancode-value keysym))
@@ -56,7 +54,7 @@
 	    (when (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape)
 	      (sdl2:push-event :quit)))
     (:idle ()
-	   (idle renderer *sprites*))
+	   (idle renderer *draw-queue*))
 
     (:quit () t)))
 
@@ -77,19 +75,19 @@
 
 ;; (main)
 
-;; (dolist (sprite *sprites*)
+;; (dolist (sprite *draw-queue*)
 ;;   (with-slots (qmapper.obj:position) sprite
 ;;     (setf qmapper.obj:position (list (random 800) (random 600)))))
 
-;; (let ((first-tileset (nth (random (length *sprites*)) *sprites*)))
+;; (let ((first-tileset (nth (random (length *draw-queue*)) *draw-queue*)))
 ;;   (if (not (equalp (sdl2:surface-width (qmapper.obj:sprite-surface first-tileset)) 50))						 
-;;       (push (qmapper.obj:create-subsprite first-tileset (list 300 50 50 50) *renderer*) *sprites*)))
+;;       (push (qmapper.obj:create-subsprite first-tileset (list 300 50 50 50) *renderer*) *draw-queue*)))
 
-;; (dolist (sprite *sprites*)
+;; (dolist (sprite *draw-queue*)
 ;;   (with-slots (qmapper.obj:opacity) sprite
 ;;     (setf qmapper.obj:opacity (random 255))))
 
 
-;; (dolist (sprite *sprites*)
+;; (dolist (sprite *draw-queue*)
 ;;   (with-slots (qmapper.obj:angle) sprite
 ;;     (setf qmapper.obj:angle (random 360))))

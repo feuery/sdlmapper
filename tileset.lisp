@@ -1,6 +1,8 @@
 (defpackage :qmapper.tileset
   (:use :common-lisp
+	:qmapper.obj
 	:cl-arrows
+	:qmapper.obj
 	:qmapper.std
 	:qmapper.obj
 	:qmapper.export
@@ -13,29 +15,40 @@
 		:load-image :image-w :image-h :copy-image
 		:add-to-drawingqueue  :clear-drawingqueue
 		:set-img-x :set-img-y
-		:do-schedule-lambda))		
+		:do-schedule-lambda)
+  (:export :tileset))
 
 (in-package :qmapper.tileset)
 
+(defvar *amount-of-tilesets* 0)
 
-(defcppclass Tileset
-    (public
-     (fields
-      (name "Tileset 1")
-      ;; (vertexShader nullptr)
-      ;; (fragmentShader nullptr)
-      (tiles '())
-      (w 0) 				; in tiles
-      (h 0))))				; in tiles
+(defclass tileset ()
+  ((name :accessor tileset-name :initform (format nil "Tileset ~a" *amount-of-tilesets*))
+   (tiles :accessor tileset-tiles)
+   (width :accessor tileset-width)
+   (height :accessor tileset-height)))
+
+
+;; (defcppclass Tileset
+;;     (public
+;;      (fields
+;;       (name "Tileset 1")
+;;       ;; (vertexShader nullptr)
+;;       ;; (fragmentShader nullptr)
+;;       (tiles '())
+;;       (w 0) 				; in tiles
+;;       (h 0))))
+					; in tiles
 
 (defun-export! get-tile (tileset x y)
-  (get-prop-in (tileset-tiles tileset) (list x y)))
+  (get-in (tileset-tiles tileset) (list x y)))
+  
 
 (defun-export! select-tileset-to-draw (*this*)
-  (clear-draw-queue :TILESET)
-  (let ((coords (pairs (mapcar #'dec (range (Tileset-w *this*)))
-		       (mapcar #'dec (range (Tileset-h *this*)))))
-	(tiles (Tileset-tiles *this*)))
+  (clear-draw-queue)
+  (let ((coords (pairs (mapcar #'dec (range (tileset-width *this*)))
+		       (mapcar #'dec (range (tileset-height *this*)))))
+	(tiles (tileset-tiles *this*)))
     ;; (format t "coord-pairs are ~a~%w and h are ~a & ~a ~%" coords
     ;; 	    (Tileset-w *this*)
     ;; 	    (Tileset-h *this*))
@@ -45,9 +58,10 @@
       	     (img (get-prop-in tiles (list x y))))
 	(if img
 	    (progn
-              (set-image-x :TILESET img (truncate (* x 50.0)))
-              (set-image-y :TILESET img (truncate (* y 50.0)))
-              (add-to-drawqueue img :TILESET))
+	      (with-slots (qmapper.obj:position) *this*
+		(setf position (list (truncate (* x 50.0))
+				     (truncate (* y 50.0)))))
+              (add-to-drawqueue img))
 	    (progn
 	      (format t "x and y are [~a ~a]~%" x y)))))
     (format t "dolist is done~%")))
@@ -56,56 +70,50 @@
   (format t "Selecting tileset~%")
   (select-tileset-to-draw tileset)
   (assert (not (consp tileset))))
-
-;; TODO me voidaan tehdä copy-img cl-sdl2:n sdl2:blit-surfacella ja käsittelemällä sdl_surfaceja kuin aikoinaan qimageja, jotka sitten muutetaan ogl-tekstuureiksi kun tarve on
   				 
-(defun-export! load-tilesetless-texture-splitted (path &key (tile-width 50) (tile-height 50))
-  (let* ((root-img (load-img path))
-	 (_ (format t "img loaded~%"))
-  	 (w (floor (/ (img-width root-img) tile-width)))
-  	 (h (floor (/ (img-height root-img) tile-height)))
-	 (_ (format t "dimensions ~a found~%" (list w h)))
+(defun-export! load-tilesetless-texture-splitted (path &key renderer (tile-width 50) (tile-height 50))
+  (assert renderer)
+  (let* ((root-sprite (create-sprite :texture-path path))
+	 (root-size (sprite-size root-sprite))
+
+  	 (w (floor (/ (first root-size) tile-width)))
+  	 (h (floor (/ (second root-size) tile-height)))
+
 	 (textures (mapcar (lambda (x)
   			     (mapcar (lambda (y)  
-  				       (copy-img root-img
-  						 (* x tile-width) (* y tile-height)
-  						 tile-width tile-height))
+  				       (create-subsprite root-sprite (list
+								   (* x tile-width) (* y tile-height)
+								   tile-width tile-height)
+							 renderer))
   				     (mapcar #'dec (range h))))
   			   (mapcar #'dec (range w)))))
     (format t "textures ~a loaded!~%" textures)
     (values
      textures
      w
-     h)))	      
-
-(defun-export! load-texture-splitted (path)
-  (let* ((root-img (load-img path))
-	 (_ (format t "img loaded~%"))
-	 (_ (assert (> (img-width root-img) 0)))
-  	 (w (/ (width root-img) 50))
-  	 (h (/ (height root-img) 50))
-	 (_ (format t "dimensions found~%"))
-	 (textures (mapcar (lambda (x)
-  			     (mapcar (lambda (y)
-				       (make-tile :x x :y y :tileset (tileset-count!) :rotation 0
-						  :gl-key
-  						  (copy-img root-img
-  							    (* x 50) (* y 50)
-  							    50 50)))
-  				     (mapcar #'dec (range h))))
-  			   (mapcar #'dec (range w)))))
-    (format t "textures loaded!")
-    (values
-     textures
-     w
      h)))
 
-(defun-export! push-tileset (root tileset)
-  (let* ((tilesets (set-prop (root-tilesets root)
-			     (get-prop tileset "ID")
-			     tileset))
-	 (final-root (set-root-tilesets! root tilesets)))
-    final-root))
+(defun-export! load-texture-splitted (path renderer)
+  (let* ((root-img (create-sprite :texture-path path :renderer renderer))
+	 (size (sprite-size root-img)))
+    (assert (> (first size) 0))
+    (let* ((w (/ (first size) 50))
+	   (h (/ (second size) 50))
+	   (textures (mapcar (lambda (x)
+			       (mapcar (lambda (y)
+					 (make-tile :x x :y y :tileset (tileset-count!) :rotation 0
+						    :sprite
+						    (create-subsprite root-img
+								      (list (* x 50) (* y 50)
+									    50 50)
+								      renderer)))
+				       (mapcar #'dec (range h))))
+			     (mapcar #'dec (range w)))))
+      (format t "textures loaded!")
+      (values
+       textures
+       w
+       h))))
 
 (defun-export! load-tileset (path)
   (format t "Going into load-tileset~%")
@@ -116,3 +124,36 @@
 	   (result (push-tileset *document* tileset)))
       (format t "set-docing result~%")
       (set-doc result ))))
+
+(defmethod initialize-instance :after ((tset tileset) &key renderer tileset-path)
+  (assert renderer)
+  (assert tileset-path)
+  (multiple-value-bind (loaded-tiles loaded-width loaded-height) (load-texture-splitted tileset-path renderer)
+    ;; TODO this could be macrofied. Could with-slots be made immutable?
+    (with-slots (tiles width height) tset
+      (setf tiles loaded-tiles)
+      (setf width loaded-width)
+      (setf height loaded-height))))
+
+(defmethod draw ((tset tileset) &key renderer (x 0) (y 0))
+
+  (with-slots (width height tiles) tset
+    (let* ((xs (mapcar #'dec (range width)))
+	   (ys (mapcar #'dec (range height)))
+	   ;; those ^^ are the indexes to tiles
+	   (pairs (pairs xs ys)))
+      ;; TODO this loop could be optimized by keeping a hold of the original surface and drawing it instead of tiles
+      (dolist (pair pairs)
+	(let* ((x-index (car pair))
+	       (y-index (cadr pair))
+	       (tile-obj (get-in tiles pair))
+	       (sprite (get-prop tile-obj "SPRITE")))
+
+	  (with-slots (position) sprite
+	    (setf position (list (+ x (* x-index 50))
+				 (+ y (* y-index 50))))
+	    (draw sprite :renderer renderer)))))))
+	    
+  ;; ladataan tile-tekstuuri muodossa jossa me saadaan yksittäinen 50x50 - tile viittaamalla siihen [x][y]
+  ;; sen jälkeen asetetaan tilesetin width ja height tileissä
+  ;; ja heitetään takaisin kutsujalle

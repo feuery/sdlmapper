@@ -53,13 +53,7 @@
   ;;(cl-freeimage:freeimage-copy img x y
 ;; (+ x w) (+ y h)))
 
-(defun-export! add-to-drawqueue (img dst-key)
-  (let ((i (get-prop img "GL-KEY")))
-    (assert i)
-    (funcall add-to-drawingqueue i (symbol-name dst-key))))
 
-(defun-export! clear-draw-queue (dst-key)
-  (funcall clear-drawingqueue (symbol-name dst-key)))
 
 (defun-export! schedule-once (dst l)
   (format t "scheduling once to dst ~a~%" (symbol-name dst))

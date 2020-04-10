@@ -275,6 +275,13 @@
 		  (not (equalp val (empty-seq))))))
     res))
 
+(defun-export! get-in (list ks)
+  (let ((key (car ks))
+	(ks (cdr ks)))
+    (if ks
+	(get-in (nth key list) ks)
+	(nth key list))))
+
 (defun-export! get-prop  (obj-alist key)
   (handler-case 
       (let ((obj-alist (if (or (listp obj-alist)
