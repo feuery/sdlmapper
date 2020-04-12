@@ -5,7 +5,8 @@
 	:rutils.abbr
 	:qmapper.std
 	:qmapper.export
-   :qmapper.script)
+	:qmapper.script)
+  (:export :tilesets :root-chosentileset :root-tilesets :*document*)
   (:shadowing-import-from :cl-strings :replace-all))
 
 (in-package :qmapper.root)

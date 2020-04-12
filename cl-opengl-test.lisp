@@ -14,11 +14,22 @@
 (defparameter *fps* 0)
 (defparameter *fps-reset* (sdl2:get-ticks))
 
+(defmulti render-scene #'equalp (renderer root)
+  (list app-state editor-state))
+
+(defmultimethod render-scene (list :editor :tileset) (renderer root)
+  (let* ((chosen-tileset (root-chosentileset root))
+	 (tileset (nth chosen-tileset (root-tilesets root))))
+    (if tileset
+    	(draw tileset :renderer renderer :x 50 :y 50))))
+
 (defun idle (renderer draw-queue)
   (sdl2:render-clear renderer)
   
-  (dolist (sprite draw-queue)
-    (render sprite renderer))
+  ;; (dolist (sprite draw-queue)
+  ;;   (render sprite renderer))
+
+  (render-scene renderer *document*)
   
   (sdl2:render-present renderer)
   (sleep 0.002)
@@ -29,8 +40,6 @@
 ;;    (format t "FPS: ~a~%" *fps*)
     (setf *fps* 0)
     (setf *fps-reset* (sdl2:get-ticks))))
-
-;; (push (make-instance 'qmapper.tileset:tileset :tileset-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer *renderer*) *draw-queue*)
 
 (defun event-loop (renderer)
   ;;(push (qmapper.obj:create-sprite :texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer renderer) *draw-queue*)
@@ -74,6 +83,11 @@
 	(event-loop renderer)))))
 
 ;; (main)
+
+;; (with-slots (tilesets) *document*
+;;   (push
+;;    (make-instance 'qmapper.tileset:tileset :tileset-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer *renderer*)
+;;    tilesets))
 
 ;; (dolist (sprite *draw-queue*)
 ;;   (with-slots (qmapper.obj:position) sprite
