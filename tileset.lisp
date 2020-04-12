@@ -101,7 +101,7 @@
 	   (h (/ (second size) 50))
 	   (textures (mapcar (lambda (x)
 			       (mapcar (lambda (y)
-					 (make-tile :x x :y y :tileset (tileset-count!) :rotation 0
+					 (make-instance 'qmapper.tile:tile :x x :y y :tileset (tileset-count!) :rotation 0
 						    :sprite
 						    (create-subsprite root-img
 								      (list (* x 50) (* y 50)
@@ -146,13 +146,12 @@
       (dolist (pair pairs)
 	(let* ((x-index (car pair))
 	       (y-index (cadr pair))
-	       (tile-obj (get-in tiles pair))
-	       (sprite (get-prop tile-obj "SPRITE")))
-
-	  (with-slots (position) sprite
-	    (setf position (list (+ x (* x-index 50))
-				 (+ y (* y-index 50))))
-	    (draw sprite :renderer renderer)))))))
+	       (tile-obj (get-in tiles pair)))
+	  (with-slots (sprite) tile-obj
+	    (with-slots (position) sprite
+	      (setf position (list (+ x (* x-index 50))
+				   (+ y (* y-index 50))))
+	      (draw sprite :renderer renderer))))))))
 	    
   ;; ladataan tile-tekstuuri muodossa jossa me saadaan yksittäinen 50x50 - tile viittaamalla siihen [x][y]
   ;; sen jälkeen asetetaan tilesetin width ja height tileissä
