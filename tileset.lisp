@@ -147,11 +147,9 @@
 	(let* ((x-index (car pair))
 	       (y-index (cadr pair))
 	       (tile-obj (get-in tiles pair)))
-	  (with-slots (sprite) tile-obj
-	    (with-slots (position) sprite
-	      (setf position (list (+ x (* x-index 50))
-				   (+ y (* y-index 50))))
-	      (draw sprite :renderer renderer))))))))
+	  (draw tile-obj :renderer renderer
+		:x (+ x (* x-index 50))
+		:y (+ y (* y-index 50))))))))
 	    
   ;; ladataan tile-tekstuuri muodossa jossa me saadaan yksittäinen 50x50 - tile viittaamalla siihen [x][y]
   ;; sen jälkeen asetetaan tilesetin width ja height tileissä

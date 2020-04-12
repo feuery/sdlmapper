@@ -10,14 +10,14 @@
   :depends-on (#:cl-arrows #:fset #:rutils #:cl-strings #:cl-ppcre #:usocket #:bordeaux-threads #:cl-fad #:sdl2 #:sdl2-image)
   :components ((:file "export")
 	       (:file "qmapper_std")
+	       (:file "obj" :depends-on ("qmapper_std"))
 	       (:file "script"
 	       	:depends-on ("qmapper_std")
 		)
 	       (:file "tile"
-		:depends-on (;; "root"
-			     "qmapper_std"
-			     ))
-  	       
+		      :depends-on (;; "root"
+				   ;;"obj"
+				   "qmapper_std"))
   	       (:file "layer"
 	       	:depends-on ("tile"))
 	       (:file "root"
@@ -30,7 +30,7 @@
   	       (:file "engine_events"
 		:depends-on ("qmapper_std"
 			     "export"))
-  	       (:file "obj" :depends-on ("qmapper_std"))
+  	       
 	       (:file "tileset"
 	       	:depends-on ("qmapper_std"
 	       		     "tile"
