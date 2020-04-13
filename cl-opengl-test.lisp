@@ -21,7 +21,19 @@
   (let* ((chosen-tileset (root-chosentileset root))
 	 (tileset (nth chosen-tileset (root-tilesets root))))
     (if tileset
-    	(draw tileset :renderer renderer :x 50 :y 50))))
+    	(draw tileset :renderer renderer))))
+
+(defmulti handle-drag #'equalp (root x y left-or-right)
+  (list app-state editor-state))
+
+(defmultimethod handle-drag (list :editor :tileset) (root x y left-or-right)
+  (if (equalp left-or-right :left)
+      (with-slots (tilesets chosentileset chosentile) root
+	(let* ((tile-x (floor (/ x 50)))
+	       (tile-y (floor (/ y 50)))
+	       (tile (get-in (tileset-tiles (nth chosentileset tilesets)) (list tile-x tile-y))))
+	  (setf chosentile tile)))))
+
 
 (defun idle (renderer draw-queue)
   (sdl2:render-clear renderer)
@@ -40,6 +52,9 @@
 ;;    (format t "FPS: ~a~%" *fps*)
     (setf *fps* 0)
     (setf *fps-reset* (sdl2:get-ticks))))
+
+(defvar +left-mouse-button+ 1)
+(defvar +right-mouse-button+ 3)
 
 (defun event-loop (renderer)
   ;;(push (qmapper.obj:create-sprite :texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer renderer) *draw-queue*)
@@ -62,6 +77,16 @@
     (:keyup (:keysym keysym)
 	    (when (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape)
 	      (sdl2:push-event :quit)))
+
+    (:mousemotion (:x x :y y)
+		  (if (or (sdl2:mouse-state-p +left-mouse-button+)
+			  (sdl2:mouse-state-p +right-mouse-button+))
+		      (handle-drag (correct-document)
+				   x y 
+				   (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
+					 ((sdl2:mouse-state-p +right-mouse-button+) :right)
+					 (t nil)))))
+		      
     (:idle ()
 	   (idle renderer *draw-queue*))
 
@@ -75,7 +100,6 @@
             sdl2-ffi:+sdl-major-version+
             sdl2-ffi:+sdl-minor-version+
             sdl2-ffi:+sdl-patchlevel+)
-					;    (format t "Opengl version ~a~%" (gl:get* :version))
     (sdl2:with-window (win :title "qmapper without the q" :flags '(:shown :resizable))
       (let* ((renderer (sdl2:create-renderer win)))
 	(sdl2:set-render-draw-color renderer 255 0 0 255)
@@ -83,6 +107,8 @@
 	(event-loop renderer)))))
 
 ;; (main)
+
+;; (setf *document* (qmapper.root:init-root!))
 
 ;; (with-slots (tilesets) *document*
 ;;   (push

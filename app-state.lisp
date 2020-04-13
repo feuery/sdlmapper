@@ -1,6 +1,7 @@
 (defpackage :qmapper.app-state
   (:use :common-lisp
 	:cl-arrows
+	:qmapper.export
 	:qmapper.std)
   (:export :app-state :editor-state))
 
@@ -11,3 +12,8 @@
 
 (defvar editor-state :tileset
   "This var controls if the editor is showing whatever current tileset or map is set as. Valid values are :tileset and :map. Map-state renders the selected tile too.")
+
+(defun-export! correct-document ()
+  (if (equalp app-state :editor)
+      qmapper.root:*document*
+      qmapper.root:*engine-document*))

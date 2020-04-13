@@ -4,4 +4,6 @@
   (:use #:cl #:qmapper.obj
 	:multimethods
 	:qmapper.root
+	:qmapper.std
+	:qmapper.tileset
 	#:qmapper.app-state))
