@@ -1,5 +1,7 @@
 ;; -*- lexical-binding: t -*-
 
+(load-file "./qmapper-visualisation.el")
+
 (defvar qmapper-server "localhost"
   "QMapper server's location/IP")
 (defvar qmapper-port nil
@@ -43,14 +45,33 @@
 				    :nowait nil)))
     (process-send-string proc (concat "SHOW-MAP\n"))))
 
-(defun qmapper-load-tileset (tileset-path)
-  (interactive "fTileset's path ")
+(defun qmapper-load-tileset (tileset-path tileset-name)
+  (interactive "fTileset's path \nsTileset's name: ")
   (let ((proc (open-network-stream *qmapper-output-buffer* (get-buffer-create *qmapper-output-buffer*)
 				    qmapper-server qmapper-editor-port
 				    :nowait nil))
 	(tileset-path (file-truename tileset-path)))
-    (process-send-string proc (concat "LOAD-TILESET;" tileset-path "\n"))))
-  
+    (process-send-string proc (concat "LOAD-TILESET;" tileset-path ";" tileset-name"\n"))))
+
+
+(defun query-qmapper (cmd callback)
+  (let* ((buffer-name (concatenate 'string "qmapper-" (prin1-to-string (random))))
+	 (proc (open-network-stream  buffer-name (get-buffer-create buffer-name)
+ 				    qmapper-server qmapper-editor-port
+ 				    :nowait nil)))
+      (process-send-string proc cmd)
+      (set-process-sentinel proc (lambda (p e)
+				   (with-current-buffer (get-buffer buffer-name)
+				     (funcall callback (buffer-string)))
+				   (kill-buffer buffer-name)))
+      nil))
+
+(defun qmapper-list-tilesets ()
+  (interactive)
+  (query-qmapper "LIST-TILESETS;\n"
+		 (lambda (tilesets)
+		   (let ((id-name-pairs (car (read-from-string tilesets))))
+		     (qmapper-visualise-data id-name-pairs))))
   
 
 ;; (make-variable-buffer-local 'qmapper-server)
