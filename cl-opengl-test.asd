@@ -14,16 +14,18 @@
 	       (:file "script"
 	       	:depends-on ("qmapper_std")
 		)
+	       
 	       (:file "tile"
 		      :depends-on (;; "root"
 				   ;;"obj"
 				   "qmapper_std"))
-  	       (:file "layer"
+	       (:file "layer"
 	       	:depends-on ("tile"))
-	       (:file "root"
+  	       (:file "root"
 		:depends-on ("script" 
 			     "export"
 			     "layer"))
+	       (:file "app-state")
 	       (:file "editor_events"
 		:depends-on ("qmapper_std"
 			     "export"))
@@ -99,6 +101,5 @@
 	       		     "test-framework"
 	       		     "root"
 	       		     "map"))
-	       (:file "app-state")
 	       (:file "package")
 	       (:file "cl-opengl-test")))

@@ -92,8 +92,6 @@
 
     (:quit () t)))
 
-(defparameter *renderer* nil)
-
 (defun main ()
   (sdl2:with-init (:everything)
     (format t "Using SDL Library Version: ~D.~D.~D~%"

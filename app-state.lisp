@@ -3,7 +3,7 @@
 	:cl-arrows
 	:qmapper.export
 	:qmapper.std)
-  (:export :app-state :editor-state))
+  (:export :app-state :*renderer* :editor-state))
 
 (in-package :qmapper.app-state)
 
@@ -12,6 +12,9 @@
 
 (defvar editor-state :tileset
   "This var controls if the editor is showing whatever current tileset or map is set as. Valid values are :tileset and :map. Map-state renders the selected tile too.")
+
+(defvar *renderer* nil
+  "Contains the renderer used by sdl when doing image things")
 
 (defun-export! correct-document ()
   (if (equalp app-state :editor)

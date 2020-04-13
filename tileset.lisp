@@ -16,17 +16,18 @@
 		:add-to-drawingqueue  :clear-drawingqueue
 		:set-img-x :set-img-y
 		:do-schedule-lambda)
-  (:export :tileset :tileset-tiles))
+  (:export :tileset-id :tileset-name :tileset :tileset-tiles))
 
 (in-package :qmapper.tileset)
 
 (defvar *amount-of-tilesets* 0)
 
 (defclass tileset ()
-  ((name :accessor tileset-name :initform (format nil "Tileset ~a" *amount-of-tilesets*))
-   (tiles :accessor tileset-tiles)
-   (width :accessor tileset-width)
-   (height :accessor tileset-height)))
+  ((name :initarg :name :accessor tileset-name :initform (format nil "Tileset ~a" *amount-of-tilesets*))
+   (id :initform (random 99999) :accessor tileset-id)
+   (tiles :initarg :tiles :accessor tileset-tiles)
+   (width :initarg :width :accessor tileset-width)
+   (height :initarg :height :accessor tileset-height)))
 
 
 ;; (defcppclass Tileset
@@ -114,16 +115,6 @@
        textures
        w
        h))))
-
-(defun-export! load-tileset (path)
-  (format t "Going into load-tileset~%")
-  (multiple-value-bind (tiles w h) (load-texture-splitted path)
-    (format t "Tiles: ~a~%" tiles)
-    (format t "Loaded tile textures, going to make tileset ~%")
-    (let* ((tileset (make-tileset :name "New tileset" :tiles tiles :w w :h h))
-	   (result (push-tileset *document* tileset)))
-      (format t "set-docing result~%")
-      (set-doc result ))))
 
 (defmethod initialize-instance :after ((tset tileset) &key renderer tileset-path)
   (assert renderer)
