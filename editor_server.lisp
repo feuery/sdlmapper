@@ -10,11 +10,17 @@
         :usocket
 	:bordeaux-threads)
   (:import-from :qmapper.export :defun-export!)
-  (:shadowing-import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable :map))
+  (:shadowing-import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable :map)
+  (:export :*sdl-single-command-queue* :schedule-once))
 
 (in-package :qmapper.editor-server)
 
 (setf *readtable* (fset-setup-readtable *readtable*))
+
+(defparameter *sdl-single-command-queue* ())
+
+(defun schedule-once (cmd)
+  (push cmd *sdl-single-command-queue*))
 
 (defparameter *server-running?* t)
 
@@ -27,14 +33,28 @@
 								       (mapcar #'tileset-id tilesets)
 								       (mapcar #'tileset-name tilesets))
 								      (format nil "(~{~s~^~%~})"))))))
-							 
+				    ("SELECT-TILESET" (lambda (message client-socket params)
+							(let* ((searched-id (parse-integer (car params)))
+							       (index (->> (range (length (root-tilesets *document*)))
+									   (mapcar #'dec)
+									   (remove-if-not (lambda (index)
+											    (with-slots (id) (nth index (root-tilesets *document*))
+											      (equalp searched-id id)))))))
+							  (if index
+							      (setf (root-chosentileset *document*) (car index))))))
+				    
+				    
+				    
 				    ("LOAD-TILESET" (lambda (message client-socket params)
 						      (let* ((tileset-path (car params))
 							     (tileset-name (cadr params)))
-							(with-slots (tilesets) *document*
-							  (push
-							   (make-instance 'qmapper.tileset:tileset :name tileset-name :tileset-path tileset-path :renderer *renderer*)
-							   tilesets)))))))
+							(schedule-once (lambda ()
+									 (with-slots (tilesets) *document*
+									   (push
+									    (make-instance 'qmapper.tileset:tileset :name tileset-name :tileset-path tileset-path :renderer *renderer*)
+									    tilesets)))))))))
+
+;;(root-chosentileset *document*)
 
 (defun process-editor-events (client-socket socket-stream message)
   (let* ((split-msg (split ";" message))

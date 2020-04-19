@@ -6,4 +6,5 @@
 	:qmapper.root
 	:qmapper.std
 	:qmapper.tileset
+	:qmapper.editor-server
 	#:qmapper.app-state))

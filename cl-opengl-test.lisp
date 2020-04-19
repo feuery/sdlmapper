@@ -46,8 +46,11 @@
   (sdl2:render-present renderer)
   (sleep 0.002)
 
-  (incf *fps*)
+  (dolist (cmd *sdl-single-command-queue*)
+    (funcall cmd))
+  (setf *sdl-single-command-queue* nil)
 
+  (incf *fps*)
   (when (> (- (sdl2:get-ticks) *fps-reset*) 1000)
 ;;    (format t "FPS: ~a~%" *fps*)
     (setf *fps* 0)
