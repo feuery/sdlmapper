@@ -16,7 +16,7 @@
 		:add-to-drawingqueue  :clear-drawingqueue
 		:set-img-x :set-img-y
 		:do-schedule-lambda)
-  (:export :tileset-id :tileset-name :tileset :tileset-tiles))
+  (:export :tileset-id :tileset-name :id :tileset :tileset-tiles))
 
 (in-package :qmapper.tileset)
 

@@ -71,7 +71,9 @@
   (query-qmapper "LIST-TILESETS;\n"
 		 (lambda (tilesets)
 		   (let ((id-name-pairs (car (read-from-string tilesets))))
-		     (qmapper-visualise-data id-name-pairs))))
+		     (qmapper-visualise-data id-name-pairs (lambda (id)
+							     (query-qmapper (concat "SELECT-TILESET;" id ";\n") (lambda (&rest aaa)
+														  aaa))))))))
   
 
 ;; (make-variable-buffer-local 'qmapper-server)

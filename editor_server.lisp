@@ -38,8 +38,8 @@
 							       (index (->> (range (length (root-tilesets *document*)))
 									   (mapcar #'dec)
 									   (remove-if-not (lambda (index)
-											    (with-slots (id) (nth index (root-tilesets *document*))
-											      (equalp searched-id id)))))))
+											    (with-slots (qmapper.tileset:id) (nth index (root-tilesets *document*))
+											      (equalp searched-id qmapper.tileset:id)))))))
 							  (if index
 							      (setf (root-chosentileset *document*) (car index))))))
 				    
@@ -73,14 +73,21 @@
   (format t "port in run-tcp-server: ~a~%" port)
   (let ((host "127.0.0.1"))
     (with-server-socket (master-socket (usocket:socket-listen host port :backlog 256))
-      (setf *socket* master-socket)
-      (format t "let's wait-for-input~%")
-      (while *server-running?*
-	(if-let (socket (socket-accept master-socket :element-type 'character))
-          (progn
-	    (format t "client accepted~%")
-	    (process-client-socket socket #'process-editor-events)
-	    (socket-close socket)))))))
+      (unwind-protect
+	   (progn
+	     (setf *socket* master-socket)
+	     (format t "let's wait-for-input~%")
+	     (while *server-running?*
+	       (if-let (socket (socket-accept master-socket :element-type 'character))
+		 (unwind-protect 
+		      (progn
+			(format t "client accepted~%")
+			(process-client-socket socket #'process-editor-events))
+		   (socket-close socket)))))
+	(progn
+	  (usocket:socket-close connection)
+	  (usocket:socket-close socket))))))
+	
 
 (defun-export! run-editor-server-threaded (port)
   (make-thread (lambda ()
