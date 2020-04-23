@@ -15,7 +15,7 @@
 	:qmapper.tile)
   ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
 					;(:import-from :fset :size :convert)
-  )
+  (:export :qmap :map-id :map-name))
 
 (in-package :qmapper.map)
 
@@ -47,14 +47,28 @@
 (defun boolp (b &rest rst)
   (typep b 'boolean))
 
+(defparameter *map-init-counter* 0)
+
 (defclass qmap ()
-  ((name :accessor map-name :initform "Map 1")
+  ((name :accessor map-name :initform (format nil "Map ~a" (incf *map-init-counter*)))
    (layers :accessor map-layers :initform '())
+   (id :initform (random 99999) :accessor map-id)
    (sprites :accessor map-sprites :initform '())
    (animatedSprites :accessor map-animatedSprites :initform '())
    (hit-layer :accessor map-hit-layer :initform '())
    (scripts-to-run :accessor map-scripts-to-run :initform '())
    (has-gravity? :accessor map-has-gravity? :initform nil))) ;;validator  #'boolp))
+
+(defmethod initialize-instance :after ((map qmap) &key layer-w layer-h layer-count)
+  (with-slots (layers hit-layer) map
+    (setf layers (->> (range layer-count)
+		      (mapcar #'dec)
+		      (mapcar (lambda (index)
+				(make-instance 'layer :name (format nil "Layer ~a" index)
+					       :tiles (make-tiles layer-w layer-h))))))
+    (setf hit-layer (make-hitlayer layer-w layer-h))))
+
+
 
 (defun map-findNearest (x y)
   ;; Let's search the nearest animatedsprite or sprite
@@ -70,186 +84,26 @@
 
       
 
-(defun-export! make-map-with-layers (doc name w h layer-count)
-  (let* ((layers (repeatedly (lambda (i)
-			       (let ((l 
-				       (make-Layer :name (str (prin1-to-string i) "th layer")
-						   :tiles
-						   (make-tiles w h))))
-					;(format t "making layer ~a ~%" l)
-				 l)) layer-count))
-	 (ids (mapcar (lambda (l) (get-prop l "ID")) layers))
-	 (map (make-map :name name
-			:layers ids
-			:sprites '()
-			:animatedSprites '()
-			:hit-layer (make-hitlayer w h)
-			:scripts-to-run '())))
-    (-> (set-root-layers! doc
-			  (reduce (lambda (all-layers layer)
-				    (set-prop all-layers (get-prop layer "ID") layer)) layers :initial-value (root-layers doc)))
-	(set-root-maps! (set-prop (root-maps doc) (get-prop map "ID") map))
-	(set-root-chosenmap! (get-prop map "ID")))))
-
-(defun-export! get-tile-at2 (layer x y)
-  (get-prop-in (root-layers *document*) (list layer 'tiles x y)))
-
-(defun-export! get-tile-at (map layer x y)
-  (let ((l (get-prop (root-layers *document*) (get-prop (map-layers map) layer))))
-    (get-prop-in l (list "tiles" x y))))
-
-(defun-export! find-layer-parent (layer root)
-  (let* ((maps (mapcar #'cdr (convert 'list (root-maps root)))))
-    (car (remove-if-not (lambda (map)
-			  (let ((layers (convert 'list (map-layers map))))
-			    (position layer layers :test #'string=)))
-			maps))))
-
-(defun-export! find-sprite-parent (sprite root)
-  (let* ((maps (mapcar #'cdr (convert 'list (root-maps root)))))
-    (car (remove-if-not (lambda (map)
-			  (let ((sprites (convert 'list (map-sprites map))))
-			    (position sprite sprites :test #'string=)))
-			maps))))
-
-(defun-export! find-animatedsprite-parent (animatedsprite root)
-  (let* ((maps (mapcar #'cdr (convert 'list (root-maps root)))))
-    (car (remove-if-not (lambda (map)
-			  (let ((animatedsprites (convert 'list (map-animatedsprites map))))
-			    (position animatedsprite animatedsprites :test #'string=)))
-			maps))))
-
-(defun-export! drop-layer (map layer-id)
-  (update-prop map "LAYERS" (lambda (layer-list)
-			      (fset:filter (lambda (l-id)
-					     (not (equalp l-id layer-id)))
-					   layer-list))))
-
-(defun-export! drop-map-layer (root map-id layer-id)
-  (let ((root (update-prop-in root (list "MAPS" map-id) (lambda (map)
-							  (drop-layer map layer-id)))))
-    (if (equalp (root-chosenLayerInd root) layer-id)
-	(let ((layer-id (-> root
-			    root-maps
-			    (get-prop (root-chosenmap root))
-			    map-layers
-			    (get-prop 0))))
-	  (format t "fixin the chosenlayer to ~a~%" layer-id)
-	  (set-root-chosenlayerind! root layer-id))
-	root)))
-
-
-
-
-
-
-
-(defun-export! drop-animatedsprite (map animatedsprite-id)
-  (update-prop map "ANIMATEDSPRITES" (lambda (animatedsprite-list)
-			      (fset:filter (lambda (l-id)
-					     (not (equalp l-id animatedsprite-id)))
-					   animatedsprite-list))))
-
-(defun-export! drop-map-animatedsprite (root map-id animatedsprite-id)
-  (update-prop-in root (list "MAPS" map-id) (lambda (map)
-					      (drop-animatedsprite map animatedsprite-id))))
-
-(defun-export! drop-sprite (map sprite-id)
-  (update-prop map "SPRITES" (lambda (sprite-list)
-			      (fset:filter (lambda (s-id)
-					     (not (equalp s-id sprite-id)))
-					   sprite-list))))
-
-(defun-export! drop-map-sprite (root map-id sprite-id)
-  (update-prop-in root (list "MAPS" map-id) (lambda (map)
-					      (drop-sprite map sprite-id))))
-	 
-(defun-export! index-of-chosen-map (root)
-  (root-chosenMap root))
-
-(defun-export! get-tile-at-chosen-map (root x y)
-  (let ((m (root-chosenMap root))
-	(l (root-chosenLayerInd root)))
-    (get-tile-at m l x y)))
-
-(defun set-tile-innest (tiles x y tile)
-  (set-prop-in tiles (list x y) tile))
-    
-(defun-export! set-tile-inner (root map layer x y tile)
-  (let* ((layer-id layer)
-	 (layers (map-layers map))
-	 (layer (get-prop (root-layers root) layer-id))
-	 (layer (set-layer-tiles! layer (set-tile-innest (layer-tiles layer) x y tile))))
-    (set-root-layers! root (set-prop (root-layers root) layer-id layer))))
-
-(defun-export! set-tile-at (root x y tile)
-  (let* ((ind (root-chosenMap root))
-	 (maps (root-maps root))
-	 (map (get-prop maps ind)))
-    (set-tile-inner root
-		    map
-		    (root-chosenLayerInd root)
-		    x
-		    y
-		    tile)))
-
-(defun-export! set-chosen-tile-at (root x y)
-  (assert (root-chosenTile root))
-  (set-tile-at root x y (root-chosenTile root)))
-
-(defun-export! set-tile-at-chosen-map (root x y tile)
-  (set-tile-at root x y tile))
-
-(defun fetch-tile-from-tileset (root tileset x y)
-  (let ((tileset (->> root
-		      (root-tilesets)
-		      (convert 'list)
-		      (mapcar #'cdr)
-		      (nth tileset))))
-    ;; (format t "(< ~a ~a)~%(< ~a ~a)~%"
-    ;; 	    x (tileset-w tileset)
-    ;; 	    y (tileset-h tileset))
-
-    (when tileset
-      
-      (assert (< x (tileset-w tileset)))
-      (assert (< y (tileset-h tileset)))
-      (get-prop-in tileset (list "tiles" x y)))))
-
-(defun-export! set-tile-rotation-at (root x y rotation)
-  (let* ((layer (get-prop (root-layers root) (root-chosenLayerInd root)))
-	 (tile (-> layer
-		   (get-prop-in (list 'tiles x y))
-		   (set-prop 'rotation rotation)))
-	 (layer (set-prop-in layer (list 'tiles x y) tile)))
-    (set-root-layers! root
-		      (set-prop (root-layers root) (root-chosenLayerInd root) layer))))
-
-(defun-export! add-layer (root map-index)
-  (let ((l nil))
-    (-> root
-	(update-prop-in (list "MAPS" map-index) (lambda (m)
-						 (let* ((layers (Map-layers m))
-							(w (true-map-width m))
-							(h (true-map-height m))
-							(ll (make-Layer :name (str (prin1-to-string (size layers)) "th layer")
-									:tiles
-												      (make-tiles w h))))
-						   ;; ei
-						   (setf l ll)
-						   (update-prop m "LAYERS" (lambda (layers)
-									     (fset:insert layers 0 (get-prop l "ID")))))))
-	(update-prop "LAYERS" (lambda (layers)
-				(set-prop layers (get-prop l "ID") l))))))
-
-(defun-export! add-layer-to-selected-map (root)
-  (add-layer root (root-chosenMap root)))
-
-(defun-export! delete-layer (root map-index layer-index)
-  (set-root-maps! root
-		  (-> (root-maps root)
-		      (alist-update map-index (lambda (m)
-						(set-Map-layers! m (drop-list-i (Map-layers m) layer-index)))))))
+;; (defun-export! make-map-with-layers (doc name w h layer-count)
+;;   (let* ((layers (repeatedly (lambda (i)
+;; 			       (let ((l 
+;; 				       (make-Layer :name (str (prin1-to-string i) "th layer")
+;; 						   :tiles
+;; 						   (make-tiles w h))))
+;; 					;(format t "making layer ~a ~%" l)
+;; 				 l)) layer-count))
+;; 	 (ids (mapcar (lambda (l) (get-prop l "ID")) layers))
+;; 	 (map (make-map :name name
+;; 			:layers ids
+;; 			:sprites '()
+;; 			:animatedSprites '()
+;; 			:hit-layer (make-hitlayer w h)
+;; 			:scripts-to-run '())))
+;;     (-> (set-root-layers! doc
+;; 			  (reduce (lambda (all-layers layer)
+;; 				    (set-prop all-layers (get-prop layer "ID") layer)) layers :initial-value (root-layers doc)))
+;; 	(set-root-maps! (set-prop (root-maps doc) (get-prop map "ID") map))
+;; 	(set-root-chosenmap! (get-prop map "ID")))))
 
 
 (defun deg->rad (deg)

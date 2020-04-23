@@ -4,15 +4,17 @@
    :cl-arrows
 	:qmapper.export
 	:qmapper.std
-	:qmapper.tile))
+	:qmapper.tile)
+  (:export :layer))
 
 (in-package :qmapper.layer)
 
 (defclass layer ()
-  ((name :accessor layer-name :initform "")
-   (opacity :accessor layer-opacity :initform 255)
-   (visible :accessor layer-visible :initform t)
-   (tiles :accessor layer-tiles :initform '())))
+  ((name :initarg :name :accessor layer-name :initform "")
+   (opacity :initarg :opacity :accessor layer-opacity :initform 255)
+   (visible :initarg :visible :accessor layer-visible :initform t)
+   (tiles :initarg :tiles :accessor layer-tiles :initform '())))
+
 (defun layer-width (*this*)
   (length (Layer-tiles *this*)))
 (defun layer-height (*this*)

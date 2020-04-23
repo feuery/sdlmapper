@@ -2,6 +2,7 @@
   (:use :common-lisp
 	:qmapper.app-state
         :qmapper.std
+	:qmapper.map
 	:qmapper.root
 	:qmapper.tileset
 	:qmapper.doc-server
@@ -24,15 +25,27 @@
 
 (defparameter *server-running?* t)
 
-(defparameter *message->event* (map ("SHOW-TILESET" (lambda (message client-socket params)
-						      (format (socket-stream client-socket) "Hello :D ~%")))
-				    ("LIST-TILESETS" (lambda (message client-socket params)
+(defparameter *message->event* (map ("LIST-TILESETS" (lambda (message client-socket params)
 						       (format (socket-stream client-socket)
 							       (with-slots (tilesets) *document*
 								 (->> (zipmap 
 								       (mapcar #'tileset-id tilesets)
 								       (mapcar #'tileset-name tilesets))
 								      (format nil "(~{~s~^~%~})"))))))
+				    ("LIST-MAPS" (lambda (message client-socket params)
+				    		   (format (socket-stream client-socket) "~a~%"
+				    			   (with-slots (qmapper.root:maps) *document*
+				    			     (mapcar (lambda (map)
+								       (list (prin1-to-string (map-id map))
+									     (prin1-to-string (map-name map))))
+								       qmapper.root:maps)))))
+				    ("CREATE-MAP" (lambda (message client-socket params)
+				    		(let ((map-w (parse-integer (car params)))
+				    		      (map-h (parse-integer (cadr params))))
+				    		  (with-slots (qmapper.root:maps) *document*
+				    		    (push (make-instance 'qmap :layer-w map-w :layer-h map-h :layer-count 1)
+				    		     qmapper.root:maps)))))
+				    
 				    ("SELECT-TILESET" (lambda (message client-socket params)
 							(let* ((searched-id (parse-integer (car params)))
 							       (index (->> (range (length (root-tilesets *document*)))
@@ -85,10 +98,8 @@
 			(process-client-socket socket #'process-editor-events))
 		   (socket-close socket)))))
 	(progn
-	  (usocket:socket-close connection)
-	  (usocket:socket-close socket))))))
+	  (usocket:socket-close master-socket))))))
 	
-
 (defun-export! run-editor-server-threaded (port)
   (make-thread (lambda ()
 		 (run-editor-server port)) :name "doc-server-thread"))

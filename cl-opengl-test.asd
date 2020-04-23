@@ -66,11 +66,6 @@
 			     "script"
 			     "export"
 			     "root"))
-	       (:file "editor_server"
-		:depends-on ("qmapper_std"
-			     "tileset"
-			     "doc-server"))
-	       
 	       (:file "animatedsprite"
 	       	:depends-on ("qmapper_std"
 	       		     "sprite"
@@ -78,6 +73,7 @@
 	       		     ;; "map"
 	       		     "export"
 	       		     "root"))
+	       
 	       (:file "map"
 	       	:depends-on ("qmapper_std"
 	       		     "animatedsprite"
@@ -89,6 +85,11 @@
 	       		     "script"
 	       		     "layer"
 	       		     "tile"))
+	       (:file "editor_server"
+		:depends-on ("qmapper_std"
+			     "tileset"
+			     "map"
+			     "doc-server"))
 	       (:file "selection-tool"
 		:depends-on ("qmapper_std"
 			     "export"

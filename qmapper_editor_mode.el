@@ -74,6 +74,19 @@
 		     (qmapper-visualise-data id-name-pairs (lambda (id)
 							     (query-qmapper (concat "SELECT-TILESET;" id ";\n") (lambda (&rest aaa)
 														  aaa))))))))
+
+(defun qmapper-new-map (w h)
+  (interactive "nMap width: \nnMap height: ")
+  (query-qmapper (concat "CREATE-MAP;" (prin1-to-string w) ";" (prin1-to-string h)";\n")
+		 (lambda (result)
+		   (message (prin1-to-string result)))))
+
+(defun qmapper-list-maps ()
+  (interactive)
+  (query-qmapper "LIST-MAPS;\n" (lambda (result)
+		   (message (prin1-to-string result)))))
+	       
+  
   
 
 ;; (make-variable-buffer-local 'qmapper-server)
