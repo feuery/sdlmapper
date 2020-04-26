@@ -23,6 +23,14 @@
     (if tileset
     	(draw tileset :renderer renderer))))
 
+(defmultimethod render-scene (list :editor :map) (renderer root)
+  (let* ((chosen-map (root-chosenmap root)))
+    (when (>= chosen-map 0)
+      (let ((map (nth chosen-map (root-maps root))))
+	(if map
+	    (draw map :renderer renderer))))))
+				      
+
 (defmulti handle-drag #'equalp (root x y left-or-right)
   (list app-state editor-state))
 

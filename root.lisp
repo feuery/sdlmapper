@@ -6,20 +6,10 @@
 	:qmapper.std
 	:qmapper.export
 	:qmapper.script)
-  (:export :maps :chosentile :tilesets  :root-chosentileset :chosentileset :root-tilesets :*document*)
+  (:export :root-maps :maps :chosentile :tilesets  :root-chosentileset :root-chosenMap :chosentileset :root-tilesets :*document*)
   (:shadowing-import-from :cl-strings :replace-all))
 
 (in-package :qmapper.root)
-
-(defun-export! true-map-width (*this*)
-  (let* ((layer-id (fset-first (get-prop *this* "LAYERS")))
-	 (layers (get-prop (root-layers *document*) layer-id)))
-    (Layer-width layers)))
-
-(defun-export! true-map-height (*this*)
-  (let* ((layer-id (fset-first (get-prop *this* "LAYERS")))
-	 (layer (get-prop (root-layers *document*) layer-id)))
-    (Layer-height layer)))
 
 (defun-export! script-ns->id (root ns)
   (clean-key 
@@ -51,8 +41,8 @@
    (scripts :accessor root-scripts :initarg :scripts :initform nil)
    (tiles :accessor root-tiles :initarg :tiles :initform nil)
    (tilesets :accessor root-tilesets :initarg :tilesets :initform nil)
-   (chosenMap :accessor root-chosenMap :initarg :chosenMap :initform -1)
-   (chosenLayerInd :accessor root-chosenLayerInd :initarg :chosenLayerInd :initform -1)
+   (chosenMap :accessor root-chosenMap :initarg :chosenMap :initform 0)
+   (chosenLayerInd :accessor root-chosenLayerInd :initarg :chosenLayerInd :initform 0)
    (chosenTileset :accessor root-chosenTileset :initarg :chosenTileset :initform  0)
    (chosenTile :accessor root-chosenTile :initarg :chosenTile :initform  nil)
    (StdVertexShader :accessor root-StdVertexShader :initarg :StdVertexShader :initform  "defaultVertex")
@@ -337,7 +327,6 @@
 
 (defvar *document-hooks* '())
 (defvar *undo-stack* '())
-
 
 (defun-export! set-doc (doc)
   (assert (not (functionp doc)))

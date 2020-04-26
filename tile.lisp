@@ -14,10 +14,12 @@
      (rotation :initarg :rotation :accessor tile-rotation :initform 0)
      (sprite :initarg :sprite :accessor tile-sprite :initform nil)))
 
-(defmethod draw ((tile-obj tile) &key renderer x y)
+(defmethod draw ((tile-obj tile) &key renderer x y (opacity 0))
+  (let ((tile-op opacity))
   (with-slots (sprite) tile-obj
-    (with-slots (position) sprite
+    (with-slots (position opacity) sprite
       (setf position (list x y))
-      (draw sprite :renderer renderer))))
+      (setf opacity tile-op)
+      (draw sprite :renderer renderer)))))
 
 ;; (export-all :qmapper.tile)

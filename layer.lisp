@@ -5,7 +5,7 @@
 	:qmapper.export
 	:qmapper.std
 	:qmapper.tile)
-  (:export :layer))
+  (:export :tiles :layer-width :layer-height :layer :layer-visible :layer-opacity))
 
 (in-package :qmapper.layer)
 
