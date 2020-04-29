@@ -14,7 +14,7 @@
      (rotation :initarg :rotation :accessor tile-rotation :initform 0)
      (sprite :initarg :sprite :accessor tile-sprite :initform nil)))
 
-(defmethod draw ((tile-obj tile) &key renderer x y (opacity 0))
+(defmethod draw ((tile-obj tile) &key renderer x y (opacity 255))
   (let ((tile-op opacity))
   (with-slots (sprite) tile-obj
     (with-slots (position opacity) sprite

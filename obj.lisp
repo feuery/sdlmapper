@@ -12,11 +12,11 @@
    ;; in pixels
    (size :accessor sprite-size)
    ;; in degrees
-   (angle :accessor sprite-angle)
+   (angle :accessor sprite-angle :initform 0)
    ;; the error color used when can't render surface (I guess)
    (color :accessor sprite-color)
    ;; 255...0, opaque...translucent
-   (opacity :accessor sprite-opacity)
+   (opacity :accessor sprite-opacity :initform 255)
    ;; we have to keep hold of this for subobject purposes
    (surface :accessor sprite-surface)
    ;; "HW-accelerated" version of the above
