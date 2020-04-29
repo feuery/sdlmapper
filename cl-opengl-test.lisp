@@ -21,7 +21,7 @@
   (let* ((chosen-tileset (root-chosentileset root))
 	 (tileset (nth chosen-tileset (root-tilesets root))))
     (if tileset
-    	(draw tileset :renderer renderer))))
+	(draw tileset :renderer renderer))))
 
 (defmultimethod render-scene (list :editor :map) (renderer root)
   (let* ((chosen-map (root-chosenmap root)))

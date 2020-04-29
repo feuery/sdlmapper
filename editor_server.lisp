@@ -35,10 +35,10 @@
 				    ("LIST-MAPS" (lambda (message client-socket params)
 				    		   (format (socket-stream client-socket) "~a~%"
 				    			   (with-slots (qmapper.root:maps) *document*
-				    			     (mapcar (lambda (map)
+							     (mapcar (lambda (map)
 								       (list (prin1-to-string (map-id map))
 									     (prin1-to-string (map-name map))))
-								       qmapper.root:maps)))))
+								     qmapper.root:maps)))))
 				    ("CREATE-MAP" (lambda (message client-socket params)
 				    		(let ((map-w (parse-integer (car params)))
 				    		      (map-h (parse-integer (cadr params))))
@@ -55,6 +55,16 @@
 											      (equalp searched-id qmapper.tileset:id)))))))
 							  (if index
 							      (setf (root-chosentileset *document*) (car index))))))
+				    ("SELECT-MAP" (lambda (message client-socket params)
+						    (let* ((searched-id (parse-integer (car params)))
+							   (index (->> (range (length (root-maps *document*)))
+								       (mapcar #'dec)
+								       (remove-if-not (lambda (index)
+											(with-slots (qmapper.map:id) (nth index (root-maps *document*))
+											  (equalp searched-id qmapper.map:id)))))))
+						      (when index
+							(setf (root-chosenmap *document*) (car index))
+							(setf qmapper.app-state:editor-state :map)))))
 				    
 				    
 				    

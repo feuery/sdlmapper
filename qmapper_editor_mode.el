@@ -66,14 +66,17 @@
 				   (kill-buffer buffer-name)))
       nil))
 
+(defun query-lambda (selection-command)
+  (lambda (dada)
+    (let ((id-name-pairs (car (read-from-string dada))))
+      (qmapper-visualise-data id-name-pairs (lambda (id)
+					      (query-qmapper (concat selection-command ";" id ";\n") (lambda (&rest aaa)
+												       aaa)))))))
+
 (defun qmapper-list-tilesets ()
   (interactive)
   (query-qmapper "LIST-TILESETS;\n"
-		 (lambda (tilesets)
-		   (let ((id-name-pairs (car (read-from-string tilesets))))
-		     (qmapper-visualise-data id-name-pairs (lambda (id)
-							     (query-qmapper (concat "SELECT-TILESET;" id ";\n") (lambda (&rest aaa)
-														  aaa))))))))
+		 (query-lambda "SELECT-TILESET")))
 
 (defun qmapper-new-map (w h)
   (interactive "nMap width: \nnMap height: ")
@@ -83,15 +86,8 @@
 
 (defun qmapper-list-maps ()
   (interactive)
-  (query-qmapper "LIST-MAPS;\n" (lambda (result)
-		   (message (prin1-to-string result)))))
-	       
-  
-  
-
-;; (make-variable-buffer-local 'qmapper-server)
-;; (make-variable-buffer-local 'qmapper-port)
-;; (make-variable-buffer-local 'qmapper-ns)
+  (query-qmapper "LIST-MAPS;\n"
+		 (query-lambda "SELECT-MAP")))
 
 (defun qmapper-fetch-ns (server port ns)
   (let ((buffer-name (concat "QMAPPER: " ns)))

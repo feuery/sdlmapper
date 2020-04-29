@@ -15,7 +15,7 @@
 	:qmapper.tile)
   ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
 					;(:import-from :fset :size :convert)
-  (:export :qmap :map-id :map-name))
+  (:export :qmap :map-id :map-name :id))
 
 (in-package :qmapper.map)
 
