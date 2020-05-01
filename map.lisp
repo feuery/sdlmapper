@@ -15,7 +15,7 @@
 	:qmapper.tile)
   ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
 					;(:import-from :fset :size :convert)
-  (:export :qmap :map-id :map-name :id))
+  (:export :set-tile-at :qmap :map-id :map-name :id :map-layers))
 
 (in-package :qmapper.map)
 
@@ -68,6 +68,19 @@
 					       :tiles (make-tiles layer-w layer-h))))))
     (setf hit-layer (make-hitlayer layer-w layer-h))))
 
+
+
+(defun set-tile-at (map layer x y tile)
+  (assert (numberp layer))
+  (handler-case 
+      (with-slots (layers) map
+	(let ((layer-obj (nth layer layers)))
+	  (with-slots (qmapper.layer:tiles) layer-obj
+	    (let ((inner-list (nth x tiles)))
+	      (setf (nth y inner-list) tile)))))
+    (error (c)
+      (format t "error: ~a~%" c))))
+      
 
 
 (defun map-findNearest (x y)

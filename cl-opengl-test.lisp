@@ -34,6 +34,14 @@
 (defmulti handle-drag #'equalp (root x y left-or-right)
   (list app-state editor-state))
 
+(defmultimethod handle-drag  (list :editor :map) (root x y left-or-right)
+  (if (equalp left-or-right :left)
+      (with-slots (chosentool chosenmap chosenlayer chosentile) root
+	(let* ((tile-x (floor (/ x 50)))
+	       (tile-y (floor (/ y 50))))
+	  ;;(format t "selected tile in handle-drag :editor :map: ~a~%" chosentile)
+	  (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y chosentile)))))
+
 (defmultimethod handle-drag (list :editor :tileset) (root x y left-or-right)
   (if (equalp left-or-right :left)
       (with-slots (tilesets chosentileset chosentile) root

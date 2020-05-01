@@ -6,7 +6,7 @@
 	:qmapper.std
 	:qmapper.export
 	:qmapper.script)
-  (:export :root-maps :maps :chosentile :tilesets  :root-chosentileset :root-chosenMap :chosentileset :root-tilesets :*document*)
+  (:export :root-chosenTile :chosentile :root-maps :maps :root-chosenLayer :chosenlayer :chosentile :tilesets  :root-chosentileset :root-chosenMap :chosentileset :root-tilesets :*document* :chosentool :chosenmap)
   (:shadowing-import-from :cl-strings :replace-all))
 
 (in-package :qmapper.root)
@@ -42,7 +42,7 @@
    (tiles :accessor root-tiles :initarg :tiles :initform nil)
    (tilesets :accessor root-tilesets :initarg :tilesets :initform nil)
    (chosenMap :accessor root-chosenMap :initarg :chosenMap :initform 0)
-   (chosenLayerInd :accessor root-chosenLayerInd :initarg :chosenLayerInd :initform 0)
+   (chosenLayer :accessor root-chosenLayer :initarg :chosenLayerInd :initform 0)
    (chosenTileset :accessor root-chosenTileset :initarg :chosenTileset :initform  0)
    (chosenTile :accessor root-chosenTile :initarg :chosenTile :initform  nil)
    (StdVertexShader :accessor root-StdVertexShader :initarg :StdVertexShader :initform  "defaultVertex")
@@ -50,7 +50,8 @@
    (StdTileviewFragShader :accessor root-StdTileviewFragShader :initarg :StdTileviewFragShader :initform  "default.tileView")
    (animatedSprites :accessor root-animatedSprites :initarg :animatedSprites :initform  nil)
    (sprites :accessor root-sprites :initarg :sprites :initform   nil)
-   (selected-coordinates :accessor root-selected-coordinates :initarg :selected-coordinates :initform  (list 0 0 0 0))))
+   (selected-coordinates :accessor root-selected-coordinates :initarg :selected-coordinates :initform  (list 0 0 0 0))
+   (chosentool :accessor root-chosentool :initarg :chosentool :initform :pen)))
 
 (defun root-get-chosen-map (*this*)
   (let ((id (root-chosenmap *this*))

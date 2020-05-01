@@ -1,10 +1,12 @@
 ;;;; package.lisp
 
 (defpackage #:cl-opengl-test
-  (:use #:cl #:qmapper.obj
+  (:use #:cl :cl-arrows
+	#:qmapper.obj
 	:multimethods
 	:qmapper.root
 	:qmapper.std
 	:qmapper.tileset
+	:qmapper.layer
 	:qmapper.editor-server
 	#:qmapper.app-state))

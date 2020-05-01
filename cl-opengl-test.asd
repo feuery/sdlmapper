@@ -20,12 +20,13 @@
 				   ;;"obj"
 				   "qmapper_std"))
 	       (:file "layer"
-	       	:depends-on ("tile"))
-  	       (:file "root"
+		      :depends-on ("tile"))
+	       (:file "root"
 		:depends-on ("script" 
 			     "export"
 			     "layer"))
-	       (:file "app-state")
+  	       (:file "app-state")
+
 	       (:file "editor_events"
 		:depends-on ("qmapper_std"
 			     "export"))
@@ -85,6 +86,8 @@
 	       		     "script"
 	       		     "layer"
 	       		     "tile"))
+	       (:file "tools"
+		      :depends-on ("map"))
 	       (:file "editor_server"
 		:depends-on ("qmapper_std"
 			     "tileset"

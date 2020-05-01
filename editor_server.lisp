@@ -53,8 +53,9 @@
 									   (remove-if-not (lambda (index)
 											    (with-slots (qmapper.tileset:id) (nth index (root-tilesets *document*))
 											      (equalp searched-id qmapper.tileset:id)))))))
-							  (if index
-							      (setf (root-chosentileset *document*) (car index))))))
+							  (when index
+							    (setf (root-chosentileset *document*) (car index))
+							    (setf qmapper.app-state:editor-state :tileset)))))
 				    ("SELECT-MAP" (lambda (message client-socket params)
 						    (let* ((searched-id (parse-integer (car params)))
 							   (index (->> (range (length (root-maps *document*)))
