@@ -54,6 +54,8 @@
    (selected-coordinates :accessor root-selected-coordinates :initarg :selected-coordinates :initform  (list 0 0 0 0))
    (chosentool :accessor root-chosentool :initarg :chosentool :initform :pen)))
 
+;; (setf (root-chosentool *document*) :rotation)
+
 (defun root-get-chosen-map (*this*)
   (let ((id (root-chosenmap *this*))
 	(maps (root-maps *this*)))

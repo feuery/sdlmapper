@@ -4,6 +4,7 @@
   (:use #:cl :cl-arrows
 	#:qmapper.obj
 	:multimethods
+	:qmapper.map
 	:qmapper.root
 	:qmapper.std
 	:qmapper.tileset
