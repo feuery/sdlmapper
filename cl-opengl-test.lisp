@@ -29,7 +29,6 @@
       (let ((map (nth chosen-map (root-maps root))))
 	(if map
 	    (draw map :renderer renderer))))))
-				      
 
 (defmulti handle-drag #'equalp (root x y left-or-right)
   (list app-state editor-state))
@@ -40,7 +39,7 @@
 	(let* ((tile-x (floor (/ x 50)))
 	       (tile-y (floor (/ y 50))))
 	  ;;(format t "selected tile in handle-drag :editor :map: ~a~%" chosentile)
-	  (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y chosentile)))))
+	  (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y (clone chosentile))))))
 
 (defmultimethod handle-drag (list :editor :tileset) (root x y left-or-right)
   (if (equalp left-or-right :left)

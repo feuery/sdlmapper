@@ -222,7 +222,8 @@
 					  (y (cadr pair)))
 				      
 				      (if-let (tile (get-tile-at layer x y))
-					(progn (let* ((sprite (tile-sprite tile))
+					(progn (let* ((rotation (tile-rotation tile))
+						      (sprite (tile-sprite tile))
 						      (tile (if sprite
 								tile
 								(when-let (tile (fetch-tile-from-tileset (nth (tile-tileset tile) (root-tilesets *document*))
@@ -241,6 +242,7 @@
 						 
 						 (when tile
 						   (draw tile
+							 :rotation rotation
 							 :renderer renderer
 							 :x (* x 50)
 							 :y (* y 50)

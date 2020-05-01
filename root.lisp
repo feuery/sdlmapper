@@ -6,8 +6,9 @@
 	:qmapper.std
 	:qmapper.export
 	:qmapper.script)
-  (:export :root-chosenTile :chosentile :root-maps :maps :root-chosenLayer :chosenlayer :chosentile :tilesets  :root-chosentileset :root-chosenMap :chosentileset :root-tilesets :*document* :chosentool :chosenmap)
-  (:shadowing-import-from :cl-strings :replace-all))
+  (:shadowing-import-from :cl-strings :replace-all)
+  (:export :root-get-chosen-map :root-chosenTile :chosentile :root-maps :maps :root-chosenLayer :chosenlayer :chosentile :tilesets  :root-chosentileset :root-chosenMap :chosentileset :root-tilesets :*document* :chosentool :chosenmap))
+
 
 (in-package :qmapper.root)
 

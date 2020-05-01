@@ -1,5 +1,6 @@
 (defpackage :qmapper.std
   (:use :common-lisp :cl-arrows)
+  (:export :clone)
   (:import-from :qmapper.export :defmacro-export! :defun-export! :defvar-export!)
   (:import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable)
   (:import-from :cl-ppcre :regex-replace-all :create-scanner :scan :parse-string)
@@ -807,6 +808,21 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 			 seq-to-drop)))
     (fset:remove-if (lambda (n) (fset:contains? (fset:convert 'fset:set seq-to-drop) n))
 		    src)))
+
+(defun clone (obj)
+  (let* ((obj-alist (->> obj
+			 class-of 
+			 sb-mop:class-slots
+			 (mapcar (lambda (slot)
+				   (cons slot 
+					 (sb-mop:slot-value-using-class (class-of obj) obj slot))))))
+	 (new-obj (sb-mop:make-instance (class-of obj))))
+    (reduce (lambda (acc slot-val-pair)
+	      (setf (sb-mop:slot-value-using-class (class-of acc) acc (car slot-val-pair))
+		    (cdr slot-val-pair))
+	      acc)
+	    obj-alist
+	    :initial-value new-obj)))
 
 ;; (qloop (lambda ()
 ;; 	 (when (key-down? "KEY-DOWN")
