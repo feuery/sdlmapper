@@ -72,8 +72,8 @@
     (let ((id-name-pairs (car (read-from-string dada))))
       (qmapper-visualise-data id-name-pairs (if selection-command
 						(lambda (id)
-						  (query-qmapper (concat selection-command ";" id ";\n") (lambda (&rest aaa)
-													   aaa)))
+						  (query-qmapper (concat selection-command ";" id ";\n") (lambda (lol)
+													   (quit-window t))))
 					      (lambda (id)
 						nil))
 			      lambdas-to-run-inside-buffer))))
