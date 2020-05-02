@@ -85,14 +85,18 @@
 
 (defun qmapper-new-map (w h)
   (interactive "nMap width: \nnMap height: ")
-  (query-qmapper (concat "CREATE-MAP;" (prin1-to-string w) ";" (prin1-to-string h)";\n")
-		 (lambda (result)
-		   (message (prin1-to-string result)))))
+  (query-qmapper (concat "CREATE-MAP;" (prin1-to-string w) ";" (prin1-to-string h)";\n") (lambda (&rest aaa) nil)))
 
 (defun qmapper-list-maps ()
   (interactive)
   (query-qmapper "LIST-MAPS;\n"
-		 (query-lambda :selection-command "SELECT-MAP")))
+		 (query-lambda :selection-command "SELECT-MAP"
+			       :lambdas-to-run-inside-buffer (list (lambda ()
+								     (local-set-key "c" (lambda ()
+											  (interactive)
+											  (call-interactively #'qmapper-new-map)
+											  (kill-this-buffer)
+											  (qmapper-list-maps))))))))
 
 (defun qmapper-list-tools ()
   (interactive)
