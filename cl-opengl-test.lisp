@@ -114,13 +114,16 @@
 		    (stop-drag))
 
     (:mousemotion (:x x :y y)
-		  (if (or (sdl2:mouse-state-p +left-mouse-button+)
-			  (sdl2:mouse-state-p +right-mouse-button+))
-		      (handle-drag (correct-document)
-				   x y 
-				   (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
-					 ((sdl2:mouse-state-p +right-mouse-button+) :right)
-					 (t nil)))))
+		  (handler-case 
+		      (if (or (sdl2:mouse-state-p +left-mouse-button+)
+			      (sdl2:mouse-state-p +right-mouse-button+))
+			  (handle-drag (correct-document)
+				       x y 
+				       (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
+					     ((sdl2:mouse-state-p +right-mouse-button+) :right)
+					     (t nil))))
+		    (error (c)
+		      (format t "tool-error: ~a~%" c))))		      
 		      
     (:idle ()
 	   (idle renderer *draw-queue*))

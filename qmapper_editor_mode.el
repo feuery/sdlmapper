@@ -66,17 +66,22 @@
 				   (kill-buffer buffer-name)))
       nil))
 
-(defun query-lambda (selection-command)
+(require 'cl-lib)
+(cl-defun query-lambda (&key selection-command lambdas-to-run-inside-buffer)
   (lambda (dada)
     (let ((id-name-pairs (car (read-from-string dada))))
-      (qmapper-visualise-data id-name-pairs (lambda (id)
-					      (query-qmapper (concat selection-command ";" id ";\n") (lambda (&rest aaa)
-												       aaa)))))))
+      (qmapper-visualise-data id-name-pairs (if selection-command
+						(lambda (id)
+						  (query-qmapper (concat selection-command ";" id ";\n") (lambda (&rest aaa)
+													   aaa)))
+					      (lambda (id)
+						nil))
+			      lambdas-to-run-inside-buffer))))
 
 (defun qmapper-list-tilesets ()
   (interactive)
   (query-qmapper "LIST-TILESETS;\n"
-		 (query-lambda "SELECT-TILESET")))
+		 (query-lambda :selection-command "SELECT-TILESET")))
 
 (defun qmapper-new-map (w h)
   (interactive "nMap width: \nnMap height: ")
@@ -87,12 +92,20 @@
 (defun qmapper-list-maps ()
   (interactive)
   (query-qmapper "LIST-MAPS;\n"
-		 (query-lambda "SELECT-MAP")))
+		 (query-lambda :selection-command "SELECT-MAP")))
 
 (defun qmapper-list-tools ()
   (interactive)
   (query-qmapper "LIST-TOOLS;\n"
-		 (query-lambda "SELECT-TOOL")))
+		 (query-lambda :selection-command "SELECT-TOOL")))
+
+(defun qmapper-list-layers ()
+  (interactive)
+  (query-qmapper "LIST-LAYERS;\n" (query-lambda :lambdas-to-run-inside-buffer (list (lambda ()
+										      (local-set-key "c" (lambda ()
+													   (interactive)
+													   (query-qmapper "CREATE-LAYER;\n" (lambda (result)
+																	      (qmapper-list-layers))))))))))
 
 (defun qmapper-fetch-ns (server port ns)
   (let ((buffer-name (concat "QMAPPER: " ns)))

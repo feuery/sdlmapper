@@ -15,7 +15,7 @@
 	:qmapper.tile)
   ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
 					;(:import-from :fset :size :convert)
-  (:export :set-tile-at :qmap :map-id :map-name :id :map-layers))
+  (:export :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
 
 (in-package :qmapper.map)
 
@@ -67,6 +67,13 @@
 				(make-instance 'layer :name (format nil "Layer ~a" index)
 					       :tiles (make-tiles layer-w layer-h))))))
     (setf hit-layer (make-hitlayer layer-w layer-h))))
+
+(defun push-layer (map)
+  (with-slots (layers) map
+    (let ((w (map-width map))
+	  (h (map-height map)))
+      (setf layers (concatenate 'list layers (list (make-instance 'layer :name (format nil "Layer ~a" (length layers))
+								  :tiles (make-tiles w h))))))))
 
 
 

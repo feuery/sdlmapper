@@ -5,12 +5,13 @@
 	:qmapper.export
 	:qmapper.std
 	:qmapper.tile)
-  (:export :layer-tiles :tiles :layer-width :layer-height :layer :layer-visible :layer-opacity))
+  (:export :layer-id :layer-name :layer-tiles :tiles :layer-width :layer-height :layer :layer-visible :layer-opacity))
 
 (in-package :qmapper.layer)
 
 (defclass layer ()
   ((name :initarg :name :accessor layer-name :initform "")
+   (id :initarg :id :accessor layer-id :initform (random 99999))
    (opacity :initarg :opacity :accessor layer-opacity :initform 255)
    (visible :initarg :visible :accessor layer-visible :initform t)
    (tiles :initarg :tiles :accessor layer-tiles :initform '())))

@@ -4,6 +4,7 @@
 	:qmapper.tools
         :qmapper.std
 	:qmapper.map
+	:qmapper.layer
 	:qmapper.root
 	:qmapper.tileset
 	:qmapper.doc-server
@@ -89,7 +90,21 @@
 							 (format (socket-stream client-socket) "~a~%"))))
 				    ("SELECT-TOOL" (lambda (message client-socket params)
 						     (let ((new-tool (read-from-string (car params))))
-						       (setf (root-chosentool *document*) new-tool))))))
+						       (setf (root-chosentool *document*) new-tool))))
+				    ("LIST-LAYERS" (lambda (message client-socket params)
+						     (let* ((chosenmap (root-get-chosen-map *document*)))
+						       (with-slots (layers) chosenmap
+							 (let ((layers (->> layers
+									    (mapcar (lambda (l)
+										      (list (layer-id l) (layer-name l)))))))
+							   (format (socket-stream client-socket) "~a~%" (prin1-to-string layers)))))))
+				    ("CREATE-LAYER" (lambda (message client-socket params)
+						      (with-slots (chosenlayer) *document*
+							(let* ((chosenmap (root-get-chosen-map *document*))
+							       (amount-of-layers (length (map-layers chosenmap))))
+							  (push-layer chosenmap)
+							  (setf chosenlayer amount-of-layers)))))))
+						     
 							    
 
 ;;(root-chosentileset *document*)
