@@ -1,6 +1,7 @@
 (defpackage :qmapper.editor-server
   (:use :common-lisp
 	:qmapper.app-state
+	:qmapper.tools
         :qmapper.std
 	:qmapper.map
 	:qmapper.root
@@ -40,11 +41,11 @@
 									     (prin1-to-string (map-name map))))
 								     qmapper.root:maps)))))
 				    ("CREATE-MAP" (lambda (message client-socket params)
-				    		(let ((map-w (parse-integer (car params)))
-				    		      (map-h (parse-integer (cadr params))))
-				    		  (with-slots (qmapper.root:maps) *document*
-				    		    (push (make-instance 'qmap :layer-w map-w :layer-h map-h :layer-count 1)
-				    		     qmapper.root:maps)))))
+						    (let ((map-w (parse-integer (car params)))
+							  (map-h (parse-integer (cadr params))))
+						      (with-slots (qmapper.root:maps) *document*
+							(push (make-instance 'qmap :layer-w map-w :layer-h map-h :layer-count 1)
+							      qmapper.root:maps)))))
 				    
 				    ("SELECT-TILESET" (lambda (message client-socket params)
 							(let* ((searched-id (parse-integer (car params)))
@@ -76,7 +77,20 @@
 									 (with-slots (tilesets) *document*
 									   (push
 									    (make-instance 'qmapper.tileset:tileset :name tileset-name :tileset-path tileset-path :renderer *renderer*)
-									    tilesets)))))))))
+									    tilesets)))))))
+				    ("LIST-TOOLS" (lambda (message client-socket params)
+						    (->> *tools*
+							 (fset:convert 'list)
+							 (mapcar #'car)
+							 (mapcar (lambda (tool-kw)
+								   ;; emacs frontend expects id-name pairs
+								   (list tool-kw tool-kw)))
+							 prin1-to-string
+							 (format (socket-stream client-socket) "~a~%"))))
+				    ("SELECT-TOOL" (lambda (message client-socket params)
+						     (let ((new-tool (read-from-string (car params))))
+						       (setf (root-chosentool *document*) new-tool))))))
+							    
 
 ;;(root-chosentileset *document*)
 

@@ -7,7 +7,7 @@
 	:qmapper.export
 	:qmapper.script)
   (:shadowing-import-from :cl-strings :replace-all)
-  (:export :root-get-chosen-map :root-chosenTile :chosentile :root-maps :maps :root-chosenLayer :chosenlayer :chosentile :tilesets  :root-chosentileset :root-chosenMap :chosentileset :root-tilesets :*document* :chosentool :chosenmap))
+  (:export :root-chosentool :root-get-chosen-map :root-chosenTile :chosentile :root-maps :maps :root-chosenLayer :chosenlayer :chosentile :tilesets  :root-chosentileset :root-chosenMap :chosentileset :root-tilesets :*document* :chosentool :chosenmap))
 
 
 (in-package :qmapper.root)
@@ -53,8 +53,6 @@
    (sprites :accessor root-sprites :initarg :sprites :initform   nil)
    (selected-coordinates :accessor root-selected-coordinates :initarg :selected-coordinates :initform  (list 0 0 0 0))
    (chosentool :accessor root-chosentool :initarg :chosentool :initform :pen)))
-
-;; (setf (root-chosentool *document*) :rotation)
 
 (defun root-get-chosen-map (*this*)
   (let ((id (root-chosenmap *this*))

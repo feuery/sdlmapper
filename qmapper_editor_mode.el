@@ -89,6 +89,11 @@
   (query-qmapper "LIST-MAPS;\n"
 		 (query-lambda "SELECT-MAP")))
 
+(defun qmapper-list-tools ()
+  (interactive)
+  (query-qmapper "LIST-TOOLS;\n"
+		 (query-lambda "SELECT-TOOL")))
+
 (defun qmapper-fetch-ns (server port ns)
   (let ((buffer-name (concat "QMAPPER: " ns)))
     (if (get-buffer buffer-name)
