@@ -20,6 +20,8 @@
 (deftool :pen (root x y tile-x tile-y selected-tile)
   (with-slots (qmapper.root:maps qmapper.root:chosenmap) root
     (let ((map (nth qmapper.root:chosenmap qmapper.root:maps)))
+      (unless (root-chosenlayer root)
+	(format t "chosen layer is nil, stuff will break~%"))
       (set-tile-at map (root-chosenlayer root) tile-x tile-y selected-tile))))
 
 (deftool :rotation (root x y tile-x tile-y selected-tile)

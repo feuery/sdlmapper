@@ -27,6 +27,31 @@
 
 (defparameter *server-running?* t)
 
+(defun clean-map (m)
+  (->> m
+       (mapcar (lambda (alist-cell)
+		 (cons (sb-mop:slot-definition-name (car alist-cell))
+		       (cdr alist-cell))))
+       (mapcar (lambda (alist-cell)
+		 (if (equalp (car alist-cell) 'layers)
+		     (cons 'layers (mapcar
+				    #'layer-name
+				    (cdr alist-cell)))
+		     alist-cell)))))
+
+(defun find-map-index (set-to-find-from
+		       ;; the lambda that transforms element of set-to-find-from to its id
+		       ;; otherwise I'd just do (with-slots (id) element), but CL's symbols are
+		       ;; namespaced and stupid and don't work that way
+		       id-getter
+		       searched-id)
+  (->> (range (length set-to-find-from))
+       (mapcar #'dec)
+       (remove-if-not (lambda (index)
+			(let ((id (funcall id-getter (nth index set-to-find-from))))
+			  (equalp searched-id id))))
+       car))
+
 (defparameter *message->event* (map ("LIST-TILESETS" (lambda (message client-socket params)
 						       (format (socket-stream client-socket)
 							       (with-slots (tilesets) *document*
@@ -60,13 +85,9 @@
 							    (setf qmapper.app-state:editor-state :tileset)))))
 				    ("SELECT-MAP" (lambda (message client-socket params)
 						    (let* ((searched-id (parse-integer (car params)))
-							   (index (->> (range (length (root-maps *document*)))
-								       (mapcar #'dec)
-								       (remove-if-not (lambda (index)
-											(with-slots (qmapper.map:id) (nth index (root-maps *document*))
-											  (equalp searched-id qmapper.map:id)))))))
+							   (index (find-map-index (root-maps *document*) #'map-id searched-id)))
 						      (when index
-							(setf (root-chosenmap *document*) (car index))
+							(setf (root-chosenmap *document*) index)
 							(setf qmapper.app-state:editor-state :map)))))
 				    
 				    
@@ -92,22 +113,73 @@
 						     (let ((new-tool (read-from-string (car params))))
 						       (setf (root-chosentool *document*) new-tool))))
 				    ("LIST-LAYERS" (lambda (message client-socket params)
-						     (let* ((chosenmap (root-get-chosen-map *document*)))
-						       (with-slots (layers) chosenmap
-							 (let ((layers (->> layers
-									    (mapcar (lambda (l)
-										      (list (layer-id l) (layer-name l)))))))
-							   (format (socket-stream client-socket) "~a~%" (prin1-to-string layers)))))))
+						     (format t "params in list-layers: ~a~%" params)
+						     (if (pos? (length params))
+							 (let* ((chosenmap-index (find-map-index (root-maps *document*) #'map-id (parse-integer (car params))))
+								;;(_ (format t "(nth ~a ~a)~%" chosenmap-index (root-maps *document*)))
+								(chosenmap (nth chosenmap-index (root-maps *document*))))
+							   (with-slots (layers) chosenmap
+							     (let ((layers (->> layers
+										(mapcar (lambda (l)
+											  (list (layer-id l) (layer-name l)))))))
+							       (format t "layers going to emacs: ~a~%" layers)
+							       (format (socket-stream client-socket) "~a~%" (prin1-to-string layers)))))
+							 (let* ((chosenmap (root-get-chosen-map *document*)))
+							   (with-slots (layers) chosenmap
+							     (let ((layers (->> layers
+										(mapcar (lambda (l)
+											  (list (layer-id l) (layer-name l)))))))
+							       (format (socket-stream client-socket) "~a~%" (prin1-to-string layers))))))))
 				    ("CREATE-LAYER" (lambda (message client-socket params)
-						      (with-slots (chosenlayer) *document*
-							(let* ((chosenmap (root-get-chosen-map *document*))
-							       (amount-of-layers (length (map-layers chosenmap))))
-							  (push-layer chosenmap)
-							  (setf chosenlayer amount-of-layers)))))))
+						      ;; FIXME niin hyvää copypastaa
+						      ;;(format t "params in create-layer: ~a~%" params)
+						      (if (pos? (length params))
+							  (with-slots (chosenlayer maps) *document*
+							    (let* ((map-id (car params))
+								   (chosenmap-index (find-map-index (root-maps *document*) #'map-id (parse-integer map-id)))
+								   (chosenmap (nth chosenmap-index maps))
+								   (amount-of-layers (length (map-layers chosenmap))))
+							      
+							      (push-layer chosenmap)
+							      (setf chosenlayer amount-of-layers)))							  
+							  (with-slots (chosenlayer) *document*
+							    (let* ((chosenmap (root-get-chosen-map *document*))
+								   (amount-of-layers (length (map-layers chosenmap))))
+							      (push-layer chosenmap)
+							      (setf chosenlayer amount-of-layers))))))
+				    ("SELECT-LAYER" (lambda (message client-socket params)
+						      (format t "params in select-layer: ~a ~%" params)
+						      (cond ((equalp (length params) 2)
+							     (with-slots (chosenmap chosenlayer maps) *document*
+							       (let* ((new-map-index (find-map-index maps #'map-id (parse-integer (car params))))
+								      (map (nth new-map-index maps)))
+								 (with-slots (layers) map
+								   (let ((layer-index (find-map-index layers #'layer-id (parse-integer (cadr params)))))
+								     (setf chosenmap new-map-index)
+								     (setf chosenlayer layer-index))))))
+							    ((equalp (length params) 1)
+							     (with-slots (chosenmap chosenlayer maps) *document*
+							       (let* ((map (root-get-chosen-map *document*)))
+								 (with-slots (layers) map
+								   (let ((layer-index (find-map-index layers #'layer-id (cadr params))))
+								     (setf chosenlayer layer-index)))))))))
+								      
+				    ("MAP-INFO" (lambda (message client-socket params)
+						  (let ((id (car params)))
+						    (format (socket-stream client-socket) "~a"
+							    (->> *document*
+								 root-maps
+								 (remove-if-not (lambda (map)
+										  (equalp (prin1-to-string (map-id map)) id)))
+								 first
+								 obj->alist
+								 clean-map
+								 prin1-to-string)))))))
+								 
+								 
 						     
 							    
 
-;;(root-chosentileset *document*)
 
 (defun process-editor-events (client-socket socket-stream message)
   (let* ((split-msg (split ";" message))
@@ -132,11 +204,13 @@
 	     (format t "let's wait-for-input~%")
 	     (while *server-running?*
 	       (if-let (socket (socket-accept master-socket :element-type 'character))
-		 (unwind-protect 
-		      (progn
-			(format t "client accepted~%")
-			(process-client-socket socket #'process-editor-events))
-		   (socket-close socket)))))
+		 (progn (handler-case 
+			    (progn
+			      (format t "client accepted~%")
+			      (process-client-socket socket #'process-editor-events))
+			  (error (c)
+			    (format t "ERROR ~a~%" c)))
+			(usocket:socket-close socket)))))
 	(progn
 	  (usocket:socket-close master-socket))))))
 	
