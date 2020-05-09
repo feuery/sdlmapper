@@ -64,6 +64,17 @@
 			  (with-slots (id) obj
 			    (equalp id searched-id))))
 	 car)))
+
+(defun get-layer-obj (root map-id layer-id)
+  (let ((map (get-obj root "MAP" map-id)))
+    (format t "map: ~a ~%" map)
+    (->> map
+	 map-layers
+	 (remove-if-not (lambda (obj)
+			  (let ((id (layer-id obj)))
+			    (equalp id  layer-id))))
+	 car)))
+	
 						     
 								 
 (defparameter *message->event* (map ("LIST-TILESETS" (lambda (message client-socket params)
@@ -191,24 +202,35 @@
 								 prin1-to-string)))))
 				    ("GET-PROPS" (lambda (message client-socket params)
 						   (let* ((type->class-map (fset:map ;;("TILE" (class-of (make-instance 'qmapper.tile:tile)))
-										     ("TILESET" (class-of (make-instance 'qmapper.tileset:tileset
-															 :renderer :DEMO
-															 :tileset-path :DEMO)))
-										     ("MAP" (class-of (make-instance 'qmapper.map:qmap :layer-w :DEMO)))
-										     ("LAYER" (class-of (make-instance 'qmapper.layer:layer)))))
+									    ("TILESET" (class-of (make-instance 'qmapper.tileset:tileset
+														:renderer :DEMO
+														:tileset-path :DEMO)))
+									    ("MAP" (class-of (make-instance 'qmapper.map:qmap :layer-w :DEMO)))
+									    ("LAYER" (class-of (make-instance 'qmapper.layer:layer)))))
 							  (result (class-props-str (fset:lookup type->class-map (car params)))))
 						     (format t "result: ~a~%" (prin1-to-string result))
 						     (format (socket-stream client-socket) "~a" (prin1-to-string result)))))
 				    ("SET-PROP" (lambda (message client-socket params)
-						  (destructuring-bind (object-type object-id name value) params
-						    (let* ((object (get-obj *document* object-type (parse-integer object-id)))
-							   (slot (->> object
-								      class-of
-								      sb-mop:class-slots
-								      (remove-if-not (lambda (slot-val)
-										       (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
-								      car)))
-						      (setf (sb-mop:slot-value-using-class (class-of object) object slot) value)))))))
+						  (let ((object-type (car params)))
+						    (if (equalp object-type "LAYER")
+							(destructuring-bind (object-type map-id layer-id name value) params
+							  (let* ((object (get-layer-obj *document* (parse-integer map-id) (parse-integer layer-id)))
+								 (slot (->> object
+									    class-of
+									    sb-mop:class-slots
+									    (remove-if-not (lambda (slot-val)
+											     (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
+									    car)))
+							    (setf (sb-mop:slot-value-using-class (class-of object) object slot) value)))
+							(destructuring-bind (object-type object-id name value) params
+							  (let* ((object (get-obj *document* object-type (parse-integer object-id)))
+								 (slot (->> object
+									    class-of
+									    sb-mop:class-slots
+									    (remove-if-not (lambda (slot-val)
+											     (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
+									    car)))
+							    (setf (sb-mop:slot-value-using-class (class-of object) object slot) value)))))))))
 
 
 
