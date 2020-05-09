@@ -103,15 +103,22 @@
   (query-qmapper (concat "GET-PROPS;" object-type ";\n")
 		 (lambda (prop-names)
 		   (let* ((prop-names (car (read-from-string prop-names)))
-			  (setter-lambda (lambda (name value)
-					  (interactive (list (completing-read "Property name: " prop-names nil t)
-							     (read-string "Property value: ")))
-					  (query-qmapper (if map-id
-							     (concat "SET-PROP;" object-type ";" map-id ";" obj-id ";" name ";" value "\n")
-							   (concat "SET-PROP;" object-type ";" obj-id ";" name ";" value "\n"))
-							 (lambda (result)
-							   (funcall lambda-to-call-when-ready))))))
-		     (call-interactively setter-lambda)))))
+			  (name (completing-read "Property name: " prop-names nil t))
+			  (visible-prop (string= name "VISIBLE"))
+			  (value (if (not visible-prop)
+				     (read-string "Property value: "))))
+
+		     (if visible-prop
+			 (query-qmapper (if map-id (concat "REVERSE-BOOL-PROP;" object-type ";" map-id ";" obj-id ";" name "\n")
+					  (concat "REVERSE-BOOL-PROP;" object-type ";" obj-id ";" name "\n"))
+					(lambda (result)
+					  (message (prin1-to-string result))))
+		       
+		       (query-qmapper (if map-id
+					  (concat "SET-PROP;" object-type ";" map-id ";" obj-id ";" name ";" value "\n")
+					(concat "SET-PROP;" object-type ";" obj-id ";" name ";" value "\n"))
+				      (lambda (result)
+					(funcall lambda-to-call-when-ready))))))))
 
 (defun qmapper-layers-of (map-id)
   (query-qmapper (concat "LIST-LAYERS;" map-id ";\n")
