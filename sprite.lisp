@@ -6,7 +6,8 @@
 	:qmapper.std
 	:qmapper.tileset
 	:qmapper.root
-	:qmapper.obj))
+	:qmapper.obj)
+  (:export :qsprite))
 
 (in-package :qmapper.sprite)
 
@@ -22,7 +23,7 @@
 
 
 ;; this could probs be replaced with qmapper.obj:sprite?
-(defclass sprite ()
+(defclass qsprite ()
   ((x :initarg :x :initform 0 :accessor sprite-x) ;; validator #'validate-x)
    (y :initarg :y :initform 0 :accessor sprite-y) ;; validator #'validate-y)
    (angle :initarg :angle :initform 0 :accessor sprite-angle) ;; validator 0.0)
@@ -31,32 +32,23 @@
 		   ;;   (and (fset:seq? g)
 		   ;; 	    (every #'numberp (fset:convert 'list g))))
 		   )
-   (parentMapId :initarg :parentMapId :accessor sprite-parentMapId :initform "")
+   ;;(parentMapId :initarg :parentMapId :accessor sprite-parentMapId :initform "")
    (name :initarg :name :accessor sprite-name :initform "")
-   (loadingDone :initarg :loadingDone :accessor sprite-loadingDone :initform nil)
+   ;;(loadingDone :initarg :loadingDone :accessor sprite-loadingDone :initform nil)
    (obj-sprite :initarg :obj-sprite :accessor sprite-obj-sprite :initform nil)))
 
 
-  
+(defmethod initialize-instance :after ((sprite qsprite) &key sprite-path renderer)
+  (if (and sprite-path
+	   renderer)
+      (with-slots (obj-sprite) sprite
+	(setf obj-sprite (create-sprite :renderer renderer :texture-path sprite-path))))
+  sprite)
 
-(defun-export! load-sprite-rootless (path)
-  (cond ((and (stringp path)
-	      (probe-file path))
-	 (let ((img (load-img path)))
-	   (make-sprite :x 0 :y 0 :angle 0.0 :parentMapId nil :name (car (last (split path "/"))) :loadingDone t :obj-sprite img)))
-	((or (keywordp path)
-	     (stringp path))
-	 (let ((img path))
-	   (make-sprite :x 0 :y 0 :angle 0.0 :parentMapId nil :name "new sprite" :loadingDone t :obj-sprite img)))
-	(t (error "called load-sprite-rootless with invalid data"))))
- 
-(defun-export! load-sprite (root path)
-  (let* ((img  (load-img path))
-	 (id   (gensym))
-	 (mapInd (root-chosenmap root)))
-    (format t "Updating root ~%")
-    (push-sprite2 root mapInd id (make-sprite :x 0 :y 0 :angle 0.0 :parentMapId mapInd :name (car (last (split path "/"))) :loadingDone t :obj-sprite img))))
-
-(defun-export! is-sprite? (spr)
-  (equalp (q-type-of spr)
-	  "Sprite"))
+(defmethod draw ((sprite qsprite) &key renderer)
+  (with-slots (x y angle obj-sprite) sprite
+    (let ((sp-angle angle))
+      (with-slots (position qmapper.obj:angle) obj-sprite
+	(setf position (list x y)
+	      qmapper.obj:angle sp-angle)
+	(draw obj-sprite :renderer renderer)))))

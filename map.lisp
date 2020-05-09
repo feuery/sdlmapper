@@ -15,7 +15,7 @@
 	:qmapper.tile)
   ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
 					;(:import-from :fset :size :convert)
-  (:export :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
+  (:export :sprites :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
 
 (in-package :qmapper.map)
 
@@ -196,7 +196,7 @@
       (get-in tiles (list x y)))))
 
 (defmethod draw ((map qmap) &key renderer dst (x 0) (y 0))
-  (declare (optimize debug))
+  ;;(declare (optimize debug))
   (if-let (*local-document* (if (equalp dst :ENGINE)
 				*engine-document*
 				qmapper.root:*document*))
@@ -272,9 +272,9 @@
 				   0
 				   127)))))
 
-      ;; (dolist (sprite sprites)
-      ;; 	;; TODO make a defmethod:draw
-      ;; 	(sprite-render sprite))
+      (dolist (sprite sprites)
+      	(draw sprite :renderer renderer))
+      	
 
       ;; (dolist (animation-id animations)
       ;; 	(let ((anim (-> (get-prop root-animations animation-id)

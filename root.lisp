@@ -49,8 +49,8 @@
    (StdVertexShader :accessor root-StdVertexShader :initarg :StdVertexShader :initform  "defaultVertex")
    (StdFragmentShader :accessor root-StdFragmentShader :initarg :StdFragmentShader :initform  "defaultFragment")
    (StdTileviewFragShader :accessor root-StdTileviewFragShader :initarg :StdTileviewFragShader :initform  "default.tileView")
-   (animatedSprites :accessor root-animatedSprites :initarg :animatedSprites :initform  nil)
-   (sprites :accessor root-sprites :initarg :sprites :initform   nil)
+   ;; (animatedSprites :accessor root-animatedSprites :initarg :animatedSprites :initform  nil)
+   ;; (sprites :accessor root-sprites :initarg :sprites :initform   nil)
    (selected-coordinates :accessor root-selected-coordinates :initarg :selected-coordinates :initform  (list 0 0 0 0))
    (chosentool :accessor root-chosentool :initarg :chosentool :initform :pen)))
 

@@ -1,6 +1,7 @@
 (defpackage :qmapper.editor-server
   (:use :common-lisp
 	:qmapper.app-state
+	:qmapper.sprite
 	:qmapper.tools
         :qmapper.std
 	:qmapper.map
@@ -194,7 +195,7 @@
 								 (with-slots (layers) map
 								   (let ((layer-index (find-map-index layers #'layer-id (cadr params))))
 								     (setf chosenlayer layer-index)))))))))
-								      
+				    
 				    ("MAP-INFO" (lambda (message client-socket params)
 						  (let ((id (car params)))
 						    (format (socket-stream client-socket) "~a"
@@ -244,16 +245,32 @@
 										     car))
 									  (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
 								     (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))
-							(destructuring-bind (object-type object-id name) params
-							  (let* ((object (get-obj *document* object-type (parse-integer object-id)))
-								 (slot (->> object
-									    class-of
-									    sb-mop:class-slots
-									    (remove-if-not (lambda (slot-val)
-											     (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
-									    car))
-								 (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
-							    (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))))))))
+								 (destructuring-bind (object-type object-id name) params
+								   (let* ((object (get-obj *document* object-type (parse-integer object-id)))
+									  (slot (->> object
+										     class-of
+										     sb-mop:class-slots
+										     (remove-if-not (lambda (slot-val)
+												      (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
+										     car))
+									  (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
+								     (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))))))
+				    ("LOAD-SPRITE" (lambda (message client-socket params)
+				    		     (destructuring-bind (path sprite-name) params
+				    		       (schedule-once (lambda ()
+									(format t "Yritetään~%")
+									(let ((chosen-map (root-get-chosen-map *document*)))
+									  (format t "Meil on chosen map~%")
+									  (with-slots (sprites) chosen-map
+									    (let ((sprite (make-instance 'qmapper.sprite:qsprite :name sprite-name
+													 :sprite-path path :renderer *renderer*)))
+									      (format t "Meil on sprite~%")
+									      (push
+									       sprite
+									       sprites))))))
+						       (format (socket-stream client-socket) "Scheduled sprite loading~%"))))))
+
+
 
 
 

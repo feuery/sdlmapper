@@ -55,6 +55,7 @@
 
 
 (defun query-qmapper (cmd callback)
+  (assert (string-suffix-p "\n" cmd))
   (let* ((buffer-name (concatenate 'string "qmapper-" (prin1-to-string (random))))
 	 (proc (open-network-stream  buffer-name (get-buffer-create buffer-name)
  				    qmapper-server qmapper-editor-port
@@ -185,6 +186,13 @@
 													   (interactive)
 													   (query-qmapper "CREATE-LAYER;\n" (lambda (result)
 																	      (qmapper-list-layers))))))))))
+
+(defun qmapper-load-sprite (sprite-path sprite-name)
+  (interactive "fSprite file path: \nsSprite's name: ")
+  (query-qmapper (concat "LOAD-SPRITE;" sprite-path ";" sprite-name "\n")
+		 (lambda (result)
+		   (message (concat "Loaded sprite " result)))))
+  
 
 (defun qmapper-fetch-ns (server port ns)
   (let ((buffer-name (concat "QMAPPER: " ns)))
