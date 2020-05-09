@@ -1,6 +1,6 @@
 (defpackage :qmapper.std
   (:use :common-lisp :cl-arrows)
-  (:export :clone)
+  (:export :clone :class-props :class-props-str)
   (:import-from :qmapper.export :defmacro-export! :defun-export! :defvar-export!)
   (:import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable)
   (:import-from :cl-ppcre :regex-replace-all :create-scanner :scan :parse-string)
@@ -834,6 +834,18 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 		 (cons (sb-mop:slot-definition-name (car alist-cell))
 		       (cdr alist-cell))))
        prin1-to-string))
+
+(defun class-props (class)
+  (->> class
+       sb-mop:class-slots
+       (mapcar #'sb-mop:slot-definition-name)))
+
+(defun class-props-str (class)
+  (->> class
+       class-props
+       (mapcar #'symbol-name)))
+	       
+    
 
 ;; (qloop (lambda ()
 ;; 	 (when (key-down? "KEY-DOWN")

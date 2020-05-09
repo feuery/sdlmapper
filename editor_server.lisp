@@ -52,6 +52,20 @@
 			  (equalp searched-id id))))
        car))
 
+(defun get-obj (root type searched-id)
+  (let ((objs 
+	 (cond ((equalp type "TILESET") (root-tilesets root))
+	       ((equalp type "MAP") (root-maps root))
+	       ;; TODO layerit on tosiaan siellä mapin alla, joten tää vaatii special casen
+	       ((equalp type "LAYER") (root-layers root))
+	       (t (error (format nil "Didn't recognize ~a" type))))))
+    (->> objs
+	 (remove-if-not (lambda (obj)
+			  (with-slots (id) obj
+			    (equalp id searched-id))))
+	 car)))
+						     
+								 
 (defparameter *message->event* (map ("LIST-TILESETS" (lambda (message client-socket params)
 						       (format (socket-stream client-socket)
 							       (with-slots (tilesets) *document*
@@ -174,11 +188,31 @@
 								 first
 								 obj->alist
 								 clean-map
-								 prin1-to-string)))))))
-								 
-								 
-						     
-							    
+								 prin1-to-string)))))
+				    ("GET-PROPS" (lambda (message client-socket params)
+						   (let* ((type->class-map (fset:map ;;("TILE" (class-of (make-instance 'qmapper.tile:tile)))
+										     ("TILESET" (class-of (make-instance 'qmapper.tileset:tileset
+															 :renderer :DEMO
+															 :tileset-path :DEMO)))
+										     ("MAP" (class-of (make-instance 'qmapper.map:qmap :layer-w :DEMO)))
+										     ("LAYER" (class-of (make-instance 'qmapper.layer:layer)))))
+							  (result (class-props-str (fset:lookup type->class-map (car params)))))
+						     (format t "result: ~a~%" (prin1-to-string result))
+						     (format (socket-stream client-socket) "~a" (prin1-to-string result)))))
+				    ("SET-PROP" (lambda (message client-socket params)
+						  (destructuring-bind (object-type object-id name value) params
+						    (let* ((object (get-obj *document* object-type (parse-integer object-id)))
+							   (slot (->> object
+								      class-of
+								      sb-mop:class-slots
+								      (remove-if-not (lambda (slot-val)
+										       (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
+								      car)))
+						      (setf (sb-mop:slot-value-using-class (class-of object) object slot) value)))))))
+
+
+
+
 
 
 (defun process-editor-events (client-socket socket-stream message)

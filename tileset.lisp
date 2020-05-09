@@ -119,12 +119,13 @@
 (defmethod initialize-instance :after ((tset tileset) &key renderer tileset-path)
   (assert renderer)
   (assert tileset-path)
-  (multiple-value-bind (loaded-tiles loaded-width loaded-height) (load-texture-splitted tileset-path renderer)
-    ;; TODO this could be macrofied. Could with-slots be made immutable?
-    (with-slots (tiles width height) tset
-      (setf tiles loaded-tiles)
-      (setf width loaded-width)
-      (setf height loaded-height))))
+  (unless (equalp renderer :DEMO)
+    (multiple-value-bind (loaded-tiles loaded-width loaded-height) (load-texture-splitted tileset-path renderer)
+      ;; TODO this could be macrofied. Could with-slots be made immutable?
+      (with-slots (tiles width height) tset
+	(setf tiles loaded-tiles)
+	(setf width loaded-width)
+	(setf height loaded-height)))))
 
 (defmethod draw ((tset tileset) &key renderer (x 0) (y 0))
 

@@ -60,13 +60,14 @@
    (has-gravity? :accessor map-has-gravity? :initform nil))) ;;validator  #'boolp))
 
 (defmethod initialize-instance :after ((map qmap) &key layer-w layer-h layer-count)
-  (with-slots (layers hit-layer) map
-    (setf layers (->> (range layer-count)
-		      (mapcar #'dec)
-		      (mapcar (lambda (index)
-				(make-instance 'layer :name (format nil "Layer ~a" index)
-					       :tiles (make-tiles layer-w layer-h))))))
-    (setf hit-layer (make-hitlayer layer-w layer-h))))
+  (unless (equalp layer-w :DEMO)
+    (with-slots (layers hit-layer) map
+      (setf layers (->> (range layer-count)
+			(mapcar #'dec)
+			(mapcar (lambda (index)
+				  (make-instance 'layer :name (format nil "Layer ~a" index)
+						 :tiles (make-tiles layer-w layer-h))))))
+      (setf hit-layer (make-hitlayer layer-w layer-h)))))
 
 (defun push-layer (map)
   (with-slots (layers) map
