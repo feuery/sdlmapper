@@ -7,7 +7,7 @@
 	:qmapper.tileset
 	:qmapper.root
 	:qmapper.obj)
-  (:export :qsprite))
+  (:export :qsprite :sprite-x :sprite-y :sprite-angle))
 
 (in-package :qmapper.sprite)
 
@@ -32,10 +32,11 @@
 		   ;;   (and (fset:seq? g)
 		   ;; 	    (every #'numberp (fset:convert 'list g))))
 		   )
+   (visible :initarg :visible :accessor sprite-visible :initform t)
    ;;(parentMapId :initarg :parentMapId :accessor sprite-parentMapId :initform "")
    (name :initarg :name :accessor sprite-name :initform "")
    ;;(loadingDone :initarg :loadingDone :accessor sprite-loadingDone :initform nil)
-   (obj-sprite :initarg :obj-sprite :accessor sprite-obj-sprite :initform nil)))
+   (obj-sprite :initarg :obj-sprite :accessor sprite-obj-sprite :initform :not-fucking-loaded-correctly)))
 
 
 (defmethod initialize-instance :after ((sprite qsprite) &key sprite-path renderer)

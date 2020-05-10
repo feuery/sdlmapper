@@ -192,7 +192,14 @@
   (query-qmapper (concat "LOAD-SPRITE;" sprite-path ";" sprite-name "\n")
 		 (lambda (result)
 		   (message (concat "Loaded sprite " result)))))
-  
+
+(defun qmapper-load-animation (animation-path framecount name)
+  (interactive "fAnimation spritesheet path: \nnHow many frames does it contain? \nsAnimations name: ")
+  (query-qmapper (concat "LOAD-ANIMATION;" animation-path ";" (prin1-to-string framecount) ";" name "\n")
+		 (lambda (result)
+		   (message (concat "Loaded animation " result)))))
+		 
+
 
 (defun qmapper-fetch-ns (server port ns)
   (let ((buffer-name (concat "QMAPPER: " ns)))

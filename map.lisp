@@ -15,7 +15,7 @@
 	:qmapper.tile)
   ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
 					;(:import-from :fset :size :convert)
-  (:export :sprites :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
+  (:export :animatedsprites :sprites :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
 
 (in-package :qmapper.map)
 
@@ -276,15 +276,8 @@
       	(draw sprite :renderer renderer))
       	
 
-      ;; (dolist (animation-id animations)
-      ;; 	(let ((anim (-> (get-prop root-animations animation-id)
-      ;; 			animatedsprite-advanceframeifneeded!)))
-      ;; 	  ;; a surprising skip of the set-doc, to prevent DoSsing dom tree element
-      ;; 	  (if (equalp dst :ENGINE)
-      ;; 	      (setf *engine-document* (set-prop-in *local-document* (list 'animatedSprites (get-prop anim "ID")) anim))
-      ;; 	      (setf qmapper.root:*document* (set-prop-in *local-document* (list 'animatedSprites (get-prop anim "ID")) anim)))
-      ;; 	  (animatedsprite-render anim)))
-      )))
+      (dolist (animation animations)
+	(draw animation :renderer renderer)))))
 
 (defun-export! select-map-layer (root map-id layer-id)
   ;;(clear-lisp-dq :MAP)

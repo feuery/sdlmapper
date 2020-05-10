@@ -258,17 +258,26 @@
 				    ("LOAD-SPRITE" (lambda (message client-socket params)
 				    		     (destructuring-bind (path sprite-name) params
 				    		       (schedule-once (lambda ()
-									(format t "Yritetään~%")
 									(let ((chosen-map (root-get-chosen-map *document*)))
-									  (format t "Meil on chosen map~%")
 									  (with-slots (sprites) chosen-map
 									    (let ((sprite (make-instance 'qmapper.sprite:qsprite :name sprite-name
 													 :sprite-path path :renderer *renderer*)))
-									      (format t "Meil on sprite~%")
 									      (push
 									       sprite
 									       sprites))))))
-						       (format (socket-stream client-socket) "Scheduled sprite loading~%"))))))
+						       (format (socket-stream client-socket) "Scheduled sprite loading~%"))))
+				    ("LOAD-ANIMATION" (lambda (message client-socket params)
+							(destructuring-bind (path framecount name) params
+							  (schedule-once (lambda ()
+									   (let ((chosen-map (root-get-chosen-map *document*)))
+									     (with-slots (qmapper.map:animatedsprites) chosen-map
+									       (push
+										(make-instance 'qmapper.animatedsprite:animatedsprite
+											       :path path
+											       :framecount (parse-integer framecount)
+											       :renderer *renderer*)
+										animatedsprites))))))))))
+									   
 
 
 

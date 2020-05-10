@@ -71,28 +71,6 @@
   (format t "Selecting tileset~%")
   (select-tileset-to-draw tileset)
   (assert (not (consp tileset))))
-  				 
-(defun-export! load-tilesetless-texture-splitted (path &key renderer (tile-width 50) (tile-height 50))
-  (assert renderer)
-  (let* ((root-sprite (create-sprite :texture-path path))
-	 (root-size (sprite-size root-sprite))
-
-  	 (w (floor (/ (first root-size) tile-width)))
-  	 (h (floor (/ (second root-size) tile-height)))
-
-	 (textures (mapcar (lambda (x)
-  			     (mapcar (lambda (y)  
-  				       (create-subsprite root-sprite (list
-								   (* x tile-width) (* y tile-height)
-								   tile-width tile-height)
-							 renderer))
-  				     (mapcar #'dec (range h))))
-  			   (mapcar #'dec (range w)))))
-    (format t "textures ~a loaded!~%" textures)
-    (values
-     textures
-     w
-     h)))
 
 (defun-export! load-texture-splitted (path renderer)
   (let* ((root-img (create-sprite :texture-path path :renderer renderer))

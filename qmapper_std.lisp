@@ -1,6 +1,6 @@
 (defpackage :qmapper.std
   (:use :common-lisp :cl-arrows)
-  (:export :clone :class-props :class-props-str)
+  (:export :get-ms-time :clone :class-props :class-props-str)
   (:import-from :qmapper.export :defmacro-export! :defun-export! :defvar-export!)
   (:import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable)
   (:import-from :cl-ppcre :regex-replace-all :create-scanner :scan :parse-string)
@@ -844,6 +844,10 @@ by setting this var to nil and killing every process on the way. TODO make a bet
   (->> class
        class-props
        (mapcar #'symbol-name)))
+
+(defun get-ms-time ()
+  (* 1000
+     (get-universal-time)))
 	       
     
 
