@@ -122,10 +122,6 @@
 ;; 	(set-root-maps! (set-prop (root-maps doc) (get-prop map "ID") map))
 ;; 	(set-root-chosenmap! (get-prop map "ID")))))
 
-
-(defun deg->rad (deg)
-  (/ (* pi deg) 180))
-
 (defun get-layer (doc map index)
   (let ((layer-list (map-layers map)))
     (get-prop (root-layers doc) (get-prop layer-list index))))

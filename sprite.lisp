@@ -7,7 +7,7 @@
 	:qmapper.tileset
 	:qmapper.root
 	:qmapper.obj)
-  (:export :qsprite :sprite-x :sprite-y :set-pos :get-pos :sprite-angle))
+  (:export :set-angle :qsprite :sprite-x :sprite-y :set-pos :get-pos :sprite-angle))
 
 (in-package :qmapper.sprite)
 
@@ -23,6 +23,7 @@
 
 (defgeneric set-pos (sprite-lookalike x y &key))
 (defgeneric get-pos (sprite-lookalike &key))
+(defgeneric set-angle (sprite-lookalike angle &key))
 
 ;; this could probs be replaced with qmapper.obj:sprite?
 (defclass qsprite ()
@@ -44,6 +45,9 @@
   (with-slots (x y) sprite
     (setf x new-x
 	  y new-y)))
+(defmethod set-angle ((sprite qsprite) angle &key)
+  (setf (sprite-angle sprite) angle))
+		  
 (defmethod get-pos ((sprite qsprite) &key)
   (with-slots (x y) sprite
     (list x y)))

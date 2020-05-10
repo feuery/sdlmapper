@@ -50,6 +50,8 @@
 (defmethod get-pos ((sprite animatedsprite) &key)
   (with-slots (x y) sprite
     (list x y)))
+(defmethod set-angle ((animation animatedsprite) angle &key)
+  (setf (animatedsprite-angle animation) angle))
 
 (defun animatedsprite-advanceFrameIfNeeded! (animation)
   (with-slots (animationPlaying lastUpdated msPerFrame) animation

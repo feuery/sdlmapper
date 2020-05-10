@@ -37,8 +37,28 @@
       (format t "ERROR: ~a~%" c))))
 
 (deftool :sprite-mover (root x y tile-x tile-y selected-tile)
-  (format t "calling sprite-mover~%")
   (let* ((map (root-get-chosen-map root))
 	 (nearest (map-findnearest map x y)))
-    (format t "nearest: ~a~% " nearest)
     (set-pos nearest x y)))
+
+(defun angle (x1 y1 x2 y2)
+  (let ((a (- x1 x2))
+	(b (- (- y1 y2))))
+    (atan a b)))
+
+(defun deg->rad (deg)
+  (/ (* pi deg) 180))
+(defun rad->deg (rad)
+  (* (/ rad pi) 180))
+
+
+(deftool :sprite-rotater (root x y tile-x tile-y selected-tile)
+  (let* ((map (root-get-chosen-map root))
+	 (nearest (map-findnearest map x y))
+	 (position (get-pos nearest)))
+    (set-angle nearest (rad->deg (angle 
+				  (car position) (cadr position)
+				  x y)))))
+
+
+	       
