@@ -3,7 +3,7 @@
 	:qmapper.std
 	:qmapper.export
    #:cl-arrows)
-  (:export :create-subsprite :angle :sprite-size :opacity :sprite-surface :position :draw :create-sprite :*draw-queue*))
+  (:export :create-subsprite :obj-sprite-angle :angle :sprite-size :opacity :sprite-surface :position :draw :create-sprite :*draw-queue*))
 
 (in-package #:qmapper.obj)
 
@@ -12,7 +12,7 @@
    ;; in pixels
    (size :accessor sprite-size)
    ;; in degrees
-   (angle :accessor sprite-angle :initform 0)
+   (angle :accessor obj-sprite-angle :initform 0)
    ;; the error color used when can't render surface (I guess)
    (color :accessor sprite-color)
    ;; 255...0, opaque...translucent

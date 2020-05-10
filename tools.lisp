@@ -2,6 +2,7 @@
   (:use :cl
 	:cl-arrows		  
 	:qmapper.tile
+	:qmapper.sprite
 	:qmapper.std
 	:qmapper.map
 	:qmapper.layer
@@ -34,3 +35,10 @@
 	  (setf rotation (mod (inc rotation) 4))))
     (error (c)
       (format t "ERROR: ~a~%" c))))
+
+(deftool :sprite-mover (root x y tile-x tile-y selected-tile)
+  (format t "calling sprite-mover~%")
+  (let* ((map (root-get-chosen-map root))
+	 (nearest (map-findnearest map x y)))
+    (format t "nearest: ~a~% " nearest)
+    (set-pos nearest x y)))

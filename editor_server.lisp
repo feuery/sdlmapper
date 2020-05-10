@@ -83,7 +83,9 @@
 								   :tileset-path :DEMO)))
 			       ("MAP" (class-of (make-instance 'qmapper.map:qmap :layer-w :DEMO)))
 			       ("LAYER" (class-of (make-instance 'qmapper.layer:layer)))))
-								 
+
+;; TODO replace this massive map with a qmapper.tools:deftool lookalike
+
 (defparameter *message->event* (map ("LIST-TILESETS" (lambda (message client-socket params)
 						       (format (socket-stream client-socket)
 							       (with-slots (tilesets) *document*

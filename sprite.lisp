@@ -7,7 +7,7 @@
 	:qmapper.tileset
 	:qmapper.root
 	:qmapper.obj)
-  (:export :qsprite :sprite-x :sprite-y :sprite-angle))
+  (:export :qsprite :sprite-x :sprite-y :set-pos :get-pos :sprite-angle))
 
 (in-package :qmapper.sprite)
 
@@ -21,6 +21,8 @@
 	(sprite-h (funcall image-h (get-prop sprite "GL-KEY"))))
     (< (+ sprite-h y) (* (true-map-height map) 50))))
 
+(defgeneric set-pos (sprite-lookalike x y &key))
+(defgeneric get-pos (sprite-lookalike &key))
 
 ;; this could probs be replaced with qmapper.obj:sprite?
 (defclass qsprite ()
@@ -38,6 +40,13 @@
    ;;(loadingDone :initarg :loadingDone :accessor sprite-loadingDone :initform nil)
    (obj-sprite :initarg :obj-sprite :accessor sprite-obj-sprite :initform :not-fucking-loaded-correctly)))
 
+(defmethod set-pos ((sprite qsprite) new-x new-y &key)
+  (with-slots (x y) sprite
+    (setf x new-x
+	  y new-y)))
+(defmethod get-pos ((sprite qsprite) &key)
+  (with-slots (x y) sprite
+    (list x y)))
 
 (defmethod initialize-instance :after ((sprite qsprite) &key sprite-path renderer)
   (if (and sprite-path

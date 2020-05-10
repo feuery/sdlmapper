@@ -15,17 +15,18 @@
 	:qmapper.tile)
   ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
 					;(:import-from :fset :size :convert)
-  (:export :animatedsprites :sprites :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
+  (:export :map-findNearest :animatedsprites :sprites :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
 
 (in-package :qmapper.map)
 
 (defun-export! find-nearest  (x y lst)
   (->> lst
        (mapcar (lambda (sprite)
-		 (list (distance (sprite-x sprite)
-				 (sprite-y sprite)
-				 x y)
-		       sprite)))
+		 (destructuring-bind (sprites-x sprites-y) (get-pos sprite)
+		   
+		   (list (distance sprites-x sprites-y
+				   x y)
+			 sprite))))
        (sort-by #'first)
        (first)
        (last)))
@@ -91,17 +92,12 @@
       
 
 
-(defun map-findNearest (x y)
+(defun map-findNearest (map mouse-x mouse-y)
   ;; Let's search the nearest animatedsprite or sprite
-  (let* ((lst  (->> (map-sprites *this*)
-		    (convert 'list)
+  (let* ((lst  (->> (map-sprites map)
 		    (concatenate 'list 
-				 (convert 'list (map-animatedSprites *this*)))
-		    (mapcar (lambda (sprite-id)
-			      (or 
-			       (get-prop (root-sprites *document*) sprite-id)
-			       (get-prop (root-animatedSprites *document*) sprite-id)))))))
-    (car (find-nearest x y lst))))
+				 (map-animatedSprites map)))))
+    (car (find-nearest mouse-x mouse-y lst))))
 
       
 

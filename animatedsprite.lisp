@@ -37,14 +37,19 @@
 (defmethod draw ((animation animatedsprite) &key renderer)
   (with-slots (sprites x y currentframeid angle) animation
       (animatedsprite-advanceframeifneeded! animation)
-      (let ((current-sprite (nth currentframeid sprites)))
-	;; (setf (sprite-x current-sprite) x
-	;;       (sprite-y current-sprite) y
-	;;       (sprite-angle current-sprite) angle)
-	 (draw current-sprite :renderer renderer)
+    (let ((current-sprite (nth currentframeid sprites)))
+      (with-slots (position) current-sprite
+	(setf position (list x y))
+	(setf (obj-sprite-angle current-sprite) angle)
+	(draw current-sprite :renderer renderer)))))
 
-	;;(format t "current-sprite: ~a~%" current-sprite)
-	)))
+(defmethod set-pos ((animation animatedsprite) new-x new-y &key)
+  (with-slots (x y) animation
+    (setf x new-x
+	  y new-y)))
+(defmethod get-pos ((sprite animatedsprite) &key)
+  (with-slots (x y) sprite
+    (list x y)))
 
 (defun animatedsprite-advanceFrameIfNeeded! (animation)
   (with-slots (animationPlaying lastUpdated msPerFrame) animation
