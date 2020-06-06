@@ -10,11 +10,6 @@
 (in-package :qmapper.std)
 
 (setf *readtable* (fset-setup-readtable *readtable*))
-#+ecl
-(setf compiler::*delete-files* nil)
-
-;; (setf si::universal-error-handler (lambda (&rest args)
-;; 				    (format "Mitä tää universal error handleri ottaa sisäänsä? ~a~%" args)))
 
 (defun-export! dec (n)
   (- n 1))
@@ -363,50 +358,50 @@
 
 (defvar-export! *silence-validators* nil)
 
-(defun-export! set-prop  (obj-alist key val)
-  (let* ((obj-alist (if (or (listp obj-alist)
-			    (consp obj-alist))
-			(convert 'seq obj-alist)
-			obj-alist))
-	 (key (clean-key key))
-	 (val (clean-val val))
-	 (validator (get-prop-in *validators* (list (q-type-of obj-alist) key)))
-	 (validator (if (consp validator)
-			(eval validator)
-			validator)))
-    (assert (not (listp val)))
-    (assert (not (consp val)))
+;; (defun-export! set-prop  (obj-alist key val)
+;;   (let* ((obj-alist (if (or (listp obj-alist)
+;; 			    (consp obj-alist))
+;; 			(convert 'seq obj-alist)
+;; 			obj-alist))
+;; 	 (key (clean-key key))
+;; 	 (val (clean-val val))
+;; 	 (validator (get-prop-in *validators* (list (q-type-of obj-alist) key)))
+;; 	 (validator (if (consp validator)
+;; 			(eval validator)
+;; 			validator)))
+;;     (assert (not (listp val)))
+;;     (assert (not (consp val)))
 
-    ;; (format t "Validator? ~a (~a)~%" validator (type-of validator))
-    (if validator
-	(if (funcall validator val obj-alist)
-	    (let* ((new-obj (with (or obj-alist (empty-map)) key val))
-		   (event-list (if (map? new-obj)
-				   (get-prop-in new-obj (list "EVENTS" key))))
-		   (result (if event-list
-			       (reduce (lambda (obj fn)
-					 (let ((fun (eval (read-from-string fn))))
-					   (funcall fun obj val))) (convert 'list event-list) :initial-value new-obj)
-			       new-obj)))
-	      (unless result
-		(format t "one of the event functions returned nil. You probably don't want that~%"))
-	      result)
-	    (progn
-	      (unless *silence-validators*
-		(format t "validator failed on obj ~a, key ~a and val ~a~%" obj-alist key val))
-	      obj-alist))
+;;     ;; (format t "Validator? ~a (~a)~%" validator (type-of validator))
+;;     (if validator
+;; 	(if (funcall validator val obj-alist)
+;; 	    (let* ((new-obj (with (or obj-alist (empty-map)) key val))
+;; 		   (event-list (if (map? new-obj)
+;; 				   (get-prop-in new-obj (list "EVENTS" key))))
+;; 		   (result (if event-list
+;; 			       (reduce (lambda (obj fn)
+;; 					 (let ((fun (eval (read-from-string fn))))
+;; 					   (funcall fun obj val))) (convert 'list event-list) :initial-value new-obj)
+;; 			       new-obj)))
+;; 	      (unless result
+;; 		(format t "one of the event functions returned nil. You probably don't want that~%"))
+;; 	      result)
+;; 	    (progn
+;; 	      (unless *silence-validators*
+;; 		(format t "validator failed on obj ~a, key ~a and val ~a~%" obj-alist key val))
+;; 	      obj-alist))
 	  
-    (let* ((new-obj (with (or obj-alist (empty-map)) key val))
-	   (event-list (if (map? new-obj)
-			   (get-prop-in new-obj (list "EVENTS" key))))
-	   (result (if event-list
-		       (reduce (lambda (obj fn)
-			     (let ((fun (eval (read-from-string fn))))
-			       (funcall fun obj val))) (convert 'list event-list) :initial-value new-obj)
-		       new-obj)))
-      (unless result
-	(format t "one of the event functions returned nil. You probably don't want that~%"))
-      result))))
+;;     (let* ((new-obj (with (or obj-alist (empty-map)) key val))
+;; 	   (event-list (if (map? new-obj)
+;; 			   (get-prop-in new-obj (list "EVENTS" key))))
+;; 	   (result (if event-list
+;; 		       (reduce (lambda (obj fn)
+;; 			     (let ((fun (eval (read-from-string fn))))
+;; 			       (funcall fun obj val))) (convert 'list event-list) :initial-value new-obj)
+;; 		       new-obj)))
+;;       (unless result
+;; 	(format t "one of the event functions returned nil. You probably don't want that~%"))
+;;       result))))
 
 (defun-export! set-prop-in (obj ks value)
   (let* ((key (car ks))
@@ -451,138 +446,6 @@
 (defun create-symbol (sym)
   (assert (stringp sym))
   (read-from-string sym))
-
-;; you can't assoc stuff to a clos object (like you'd do to those "objects" (fset maps) this macro produces or clojure's maps), thus this is a relevant hack - but a hack nonetheless
-(defmacro-export! defcppclass (classname &rest rst)
-  (let* ((visibility-stripped (apply #'append
-				     (mapcan #'cdr rst)))
-  	 (partitioned (partition-by #'listp visibility-stripped))
-	 (props (plist-get partitioned 'properties))
-	 (stupid-fields (concatenate 'list (plist-get partitioned 'fields)
-			      props))
-  	 (fields (reverse (mapcar (lambda (field)
-				    (car field))
-				  stupid-fields)))
-	 (values (reverse (mapcar (lambda (field)
-				    (second field))
-				  stupid-fields)))
-	 (validators (reverse (mapcar (lambda (field)
-	 				(cons (prin1-to-string (car field)) (third field)))
-	 			      stupid-fields)))
-	 (fields-with-accessors (cons 'progn (concatenate 'list (->> stupid-fields
-	 							     (mapcan (lambda (f)
-	 								       (let* ((field (car f))
-										      (getter (sym (str (symbol-name classname)
-	 												"-"
-	 												(symbol-name field))))
-	 									      (setter (sym (str "set-"
-	 												(symbol-name classname)
-	 												"-"
-	 												(symbol-name field)
-	 												"!"))))
-										 (list `(defun-export! ,getter (this)
-											  (unless this
-											    (format t "~a failed, this is nil~%" (prin1-to-string (quote ,getter)))
-											    ;; Let's try to cause a core dump...
-											    #+ecl (ext:quit -11)
-											    #+sbcl (sb-ext:quit))
-											  ;; (format t "this is ~a~%" this)
-											  (when (or (consp this)
-												    (integerp this))
-											    (format t "*this* is funny: ~a~%" this)
-											    )
-											  (get-prop this ',field))
-										       `(defun-export! ,setter (this val)
-											  (assert this)
-											  (set-prop this ',field val))))))))))
-  	 (funcs (->> (plist-get partitioned 'functions)
-		     (mapcar (lambda (fn)
-			       (let ((name (sym (str (symbol-name classname)
-						     "-"
-						     (symbol-name (first fn)))))
-				     (param-list (second fn))
-				     (body (drop fn 2))
-				     (this (sym (format nil "~a" (gensym)))))
-				 `(defun-export! ,name (,this ,@param-list)
-				    (let ((*this* ,this))
-				      ,@body)))))))
-	 (ctr-name (sym (str "make-" (symbol-name classname))))
-	 (meta-name (sym (str (symbol-name classname) "-meta")))
-	 (ctr `(defun-export! ,ctr-name (&key ,@(->> stupid-fields
-						     reverse
-						     (mapcar (lambda (f-v-validator)
-							       (let ((f (car f-v-validator))
-								     (value (second f-v-validator)))
-								 (list f value))))))
-		 (let* ((hash (empty-map))
-			(fields (list "id" "events" ,@(mapcar (lambda (f)
-						      (format nil "~a" f))
-		 				fields)))
-			(values (list (good-gensym) (empty-map) ,@fields))
-			(fields-and-vals (cons (cons "TYPE-NAME" (list ,(symbol-name classname)))
-					       (zipmap fields values))))
-
-		   (reduce (lambda (hashmap k-v)
-			     (let ((k (car k-v))
-				   (v (cadr k-v)))
-			       (set-prop hashmap k v))) fields-and-vals :initial-value hash))))
-	 (meta-name (sym (str (symbol-name classname) "-meta")))
-	 (meta-fn `(->> (reduce (lambda (map val)
-				  (if (cdr val)
-				      (set-prop map (car val) (cdr val))
-				      map))
-				(mapcar (lambda (prop)
-					  (cons (car prop) (third prop)))
-					',props) :initial-value (empty-map))))
-	 (validate-fn `(defun-export! ,(create-symbol (format nil "validate-~a" classname)) (obj)
-			 (let* ((type (q-type-of obj))
-				(validator-map (convert 'list (get-prop *validators* type))))
-			   (reduce (lambda (last-result
-					    validator-kv)
-				     (let* ((key (car validator-kv))
-					    (validator (cdr validator-kv))
-					    (validator (if (consp validator)
-							   (eval validator)
-							   validator)))
-				       (if validator
-					   (and last-result
-						(funcall validator (get-prop obj key) obj))
-					   last-result)))
-				   validator-map :initial-value t ))))
-	 )
-    `(progn
-       ,ctr
-       ,fields-with-accessors
-       ,@funcs
-       ,validate-fn
-       
-       (setf *validators* (with *validators* (symbol-name ',classname) (convert 'map (read-from-string ,(prin1-to-string validators)))))
-
-       (defun-export! ,meta-name ()
-	 ,meta-fn)
-       
-       (symbol-name ',classname))))
-
-(defun-export! q-type-of  (obj-alist)
-  ;; (format t "obj-alist on ~a~%" obj-alist)
-  (handler-case
-      (get-prop obj-alist "type-name")
-    (TYPE-ERROR (te)
-      (format t "Mikä tää type error on? ~a~%" te))
-    (SIMPLE-TYPE-ERROR (ste)
-      (format t "ste bongattu, obj-alist on ~a~%" obj-alist))
-    (SIMPLE-ERROR (lol)
-      (format t "Virhe: obj-alist on ~a~%" (prin1-to-string obj-alist))
-      "NULL-TYPE")))
-
-(defun-export! q-type-of-2 (obj)
-  "If the object isn't compatible with the qmapper object model, it's dumped to cl's type-of"
-  (handler-case
-      (get-prop obj "type-name")
-    (SIMPLE-TYPE-ERROR (ste)
-      (format t "ste bongattu, obj on ~a~%" obj))
-    (SIMPLE-ERROR (lol)
-      (type-of obj))))
 
 ;; (delete-duplicates (concatenate 'list (range 10) (range 12)) :test #'equalp)
 
