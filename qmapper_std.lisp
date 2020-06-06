@@ -712,22 +712,34 @@ by setting this var to nil and killing every process on the way. TODO make a bet
   (* 1000
      (get-universal-time)))
 
-
 (defmacro defclass* (class-name &rest slot-val-pairs)
-  (let ((ctr-name (create-symbol (str "make-" (symbol-name class-name))))
+  (let* ((ctr-name (create-symbol (str "make-" (symbol-name class-name))))
 	(slots (mapcar #'first slot-val-pairs))
-	(ctr-params `(&key ,@slot-val-pairs)))
+	(ctr-params `(&key ,@slot-val-pairs))
+	 (getters (->> slots
+			    (mapcar (lambda (slot)
+				      (list slot
+					    (create-symbol (str (symbol-name class-name) "-" (symbol-name slot))))))
+			    (mapcar (lambda (slot-getter-name)
+				      (destructuring-bind (slot getter-name) slot-getter-name
+					  `(progn
+					     (defun ,getter-name (obj)
+					       (fset:lookup obj (symbol-name ',slot)))
+					     (export ',getter-name))))))))
     `(progn
+       ,@getters
        (defun ,ctr-name ,ctr-params
 	 (fset:map
 	  ("TYPE" ',class-name)
 	  ,@(mapcar (lambda (slot-val)
 		      (list (prin1-to-string slot-val) slot-val))
 		    slots))))))
-
+(export 'defclass*)
 ;; (defclass* lol
 ;;     (slot-1 "AAA")
 ;;   (slot-2 232))
+
+;; (lol-slot-1 (make-lol))
 
 (defmacro with-slots* (slots obj &rest body)
   `(let ((obj (fset:convert 'hash-table ,obj :test #'equalp)))
