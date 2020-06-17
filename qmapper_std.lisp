@@ -713,6 +713,10 @@ by setting this var to nil and killing every process on the way. TODO make a bet
      (get-universal-time)))
 
 (defmacro defclass* (class-name &rest slot-val-pairs)
+  (unless (car slot-val-pairs)
+    (format t "First slot is nil. Have you converted from the clos defclass perhaps?~%")
+    (error 'error ))
+    
   (let* ((ctr-name (create-symbol (str "make-" (symbol-name class-name))))
 	(slots (mapcar #'first slot-val-pairs))
 	(ctr-params `(&key ,@slot-val-pairs))
@@ -728,7 +732,7 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 					     (export ',getter-name))))))))
     `(progn
        ,@getters
-       (defun ,ctr-name ,ctr-params
+       (defun-export! ,ctr-name ,ctr-params
 	 (fset:map
 	  ("TYPE" ',class-name)
 	  ,@(mapcar (lambda (slot-val)
@@ -742,14 +746,22 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 ;; (lol-slot-1 (make-lol))
 
 (defmacro with-slots* (slots obj &rest body)
-  `(let ((obj (fset:convert 'hash-table ,obj :test #'equalp)))
-     ,@(reduce (lambda (body slot)
-		 (subst `(gethash ,(symbol-name slot) obj)
-			slot
-			body))
-	       slots
-	       :initial-value body)
-     (fset:convert 'map obj)))				  
+  (let ((obj-sym (if (symbolp obj)
+		     obj
+		     (gensym))))
+    `(let ((,obj-sym (fset:convert 'hash-table ,obj :test #'equalp)))
+       ,@(reduce (lambda (body slot)
+		   (subst `(gethash ,(symbol-name slot) ,obj-sym)
+			  slot
+			  body))
+		 slots
+		 :initial-value body)
+       (fset:convert 'map ,obj-sym))))
+
+(defmethod fset:lookup ((collection hash-table) key)
+  (gethash key collection :not-found))
+
+(export 'with-slots*)
 
 ;; (qloop (lambda ()
 ;; 	 (when (key-down? "KEY-DOWN")

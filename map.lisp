@@ -15,7 +15,7 @@
 	:qmapper.tile)
   ;(:import-from :qmapper.export :clear-lisp-drawingqueue :add-lambda-to-drawingqueue)
 					;(:import-from :fset :size :convert)
-  (:export :map-findNearest :animatedsprites :sprites :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
+  (:export :init-map :map-findNearest :animatedsprites :sprites :push-layer :set-tile-at :layers :qmap :map-id :map-name :id :map-layers :id))
 
 (in-package :qmapper.map)
 
@@ -50,32 +50,33 @@
 
 (defparameter *map-init-counter* 0)
 
-(defclass qmap ()
-  ((name :accessor map-name :initform (format nil "Map ~a" (incf *map-init-counter*)))
-   (layers :accessor map-layers :initform '())
-   (id :initform (random 99999) :accessor map-id)
-   (sprites :accessor map-sprites :initform '())
-   (animatedSprites :accessor map-animatedSprites :initform '())
-   (hit-layer :accessor map-hit-layer :initform '())
-   (scripts-to-run :accessor map-scripts-to-run :initform '())
-   (has-gravity? :accessor map-has-gravity? :initform nil))) ;;validator  #'boolp))
+(defclass* map
+  (name (format nil "Map ~a" (incf *map-init-counter*)))
+   (layers '())
+   (id (random 99999))
+   (sprites '())
+   (animatedSprites '())
+   (hit-layer '())
+   (scripts-to-run '())
+   (has-gravity? nil)) ;;validator  #'boolp))
 
-(defmethod initialize-instance :after ((map qmap) &key layer-w layer-h layer-count)
+(defun init-map (map &key layer-w layer-h layer-count)
   (unless (equalp layer-w :DEMO)
-    (with-slots (layers hit-layer) map
+    (with-slots* (layers hit-layer) map
       (setf layers (->> (range layer-count)
 			(mapcar #'dec)
 			(mapcar (lambda (index)
-				  (make-instance 'layer :name (format nil "Layer ~a" index)
-						 :tiles (make-tiles layer-w layer-h))))))
+				  (make-layer :name (format nil "Layer ~a" index)
+					      :tiles (make-tiles layer-w layer-h))))))
       (setf hit-layer (make-hitlayer layer-w layer-h)))))
 
 (defun push-layer (map)
-  (with-slots (layers) map
+  (with-slots* (layers) map
     (let ((w (map-width map))
 	  (h (map-height map)))
-      (setf layers (concatenate 'list layers (list (make-instance 'layer :name (format nil "Layer ~a" (length layers))
-								  :tiles (make-tiles w h))))))))
+      ;; TODO jatka tästä paskesta 
+      (setf layers (concatenate 'list layers (list (make-layer :name (format nil "Layer ~a" (length layers))
+							       :tiles (make-tiles w h))))))))
 
 
 
@@ -187,89 +188,89 @@
     (let ((tiles (tileset-tiles tileset)))
       (get-in tiles (list x y)))))
 
-(defmethod draw ((map qmap) &key renderer dst (x 0) (y 0))
-  ;;(declare (optimize debug))
-  (if-let (*local-document* (if (equalp dst :ENGINE)
-				*engine-document*
-				qmapper.root:*document*))
-    (let* (;;(map (get-prop (root-maps root) (root-chosenmap root)))
-	   (hitdata (map-hit-layer map))
-	   (w (map-width map))
-	   (h (map-height map))
-	   (x-coords (mapcar #'dec (range w)))
-	   (y-coords (mapcar #'dec (range h)))
-	   (layers (->> (map-layers map)
-			(remove-if-not #'layer-visible))) ;;old layer-list
-	   ;;(layers (length layer-list))
-	   ;;(l-coords (reverse (mapcar #'dec (range layers))))
-	   (sprites (map-sprites map))
-	   ;;(root-sprites (root-sprites *local-document*))
-	   (animations (map-animatedsprites map))
-	   ;;(root-animations (root-animatedsprites *local-document*))
-	   ;; (final-l-coords (->> l-coords
-	   ;; 			(remove-if-not (lambda (l-index)
-	   ;; 					 (let ((layer (get-layer root map l-index)))
-	   ;; 					   (layer-visible layer))))))
-	   )
+;; (defmethod draw ((map qmap) &key renderer dst (x 0) (y 0))
+;;   ;;(declare (optimize debug))
+;;   (if-let (*local-document* (if (equalp dst :ENGINE)
+;; 				*engine-document*
+;; 				qmapper.root:*document*))
+;;     (let* (;;(map (get-prop (root-maps root) (root-chosenmap root)))
+;; 	   (hitdata (map-hit-layer map))
+;; 	   (w (map-width map))
+;; 	   (h (map-height map))
+;; 	   (x-coords (mapcar #'dec (range w)))
+;; 	   (y-coords (mapcar #'dec (range h)))
+;; 	   (layers (->> (map-layers map)
+;; 			(remove-if-not #'layer-visible))) ;;old layer-list
+;; 	   ;;(layers (length layer-list))
+;; 	   ;;(l-coords (reverse (mapcar #'dec (range layers))))
+;; 	   (sprites (map-sprites map))
+;; 	   ;;(root-sprites (root-sprites *local-document*))
+;; 	   (animations (map-animatedsprites map))
+;; 	   ;;(root-animations (root-animatedsprites *local-document*))
+;; 	   ;; (final-l-coords (->> l-coords
+;; 	   ;; 			(remove-if-not (lambda (l-index)
+;; 	   ;; 					 (let ((layer (get-layer root map l-index)))
+;; 	   ;; 					   (layer-visible layer))))))
+;; 	   )
       
-      (->> layers
-	   (mapcar-with-index (lambda (layer index)
-				;;(let ((layer (get-prop (root-layers root) (get-prop layer-list l))))
-				(let ((coord-pairs (pairs x-coords y-coords)))
-				  (dolist (pair coord-pairs)
-				    ;;(format t "Drawing tile at ~a~%" pair)
-				    (let ((x (car pair))
-					  (y (cadr pair)))
+;;       (->> layers
+;; 	   (mapcar-with-index (lambda (layer index)
+;; 				;;(let ((layer (get-prop (root-layers root) (get-prop layer-list l))))
+;; 				(let ((coord-pairs (pairs x-coords y-coords)))
+;; 				  (dolist (pair coord-pairs)
+;; 				    ;;(format t "Drawing tile at ~a~%" pair)
+;; 				    (let ((x (car pair))
+;; 					  (y (cadr pair)))
 				      
-				      (if-let (tile (get-tile-at layer x y))
-					(progn (let* ((rotation (tile-rotation tile))
-						      (sprite (tile-sprite tile))
-						      (tile (if sprite
-								tile
-								(when-let (tile (fetch-tile-from-tileset (nth (tile-tileset tile) (root-tilesets *document*))
-													 (tile-x tile)
-													 (tile-y tile)))
-								  tile)))
-						      ;; (subtile (if (not (zerop index))
-						      ;; 		    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))
-						      ;; 		      (if (valid-gl-key? (tile-gl-key subtile))
-						      ;; 			  subtile
-						      ;; 			  (fetch-tile-from-tileset root
-						      ;; 						   (tile-tileset subtile)
-						      ;; 						   (tile-x subtile)
-						      ;; 						   (tile-y subtile))))))
-						      )
+;; 				      (if-let (tile (get-tile-at layer x y))
+;; 					(progn (let* ((rotation (tile-rotation tile))
+;; 						      (sprite (tile-sprite tile))
+;; 						      (tile (if sprite
+;; 								tile
+;; 								(when-let (tile (fetch-tile-from-tileset (nth (tile-tileset tile) (root-tilesets *document*))
+;; 													 (tile-x tile)
+;; 													 (tile-y tile)))
+;; 								  tile)))
+;; 						      ;; (subtile (if (not (zerop index))
+;; 						      ;; 		    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))
+;; 						      ;; 		      (if (valid-gl-key? (tile-gl-key subtile))
+;; 						      ;; 			  subtile
+;; 						      ;; 			  (fetch-tile-from-tileset root
+;; 						      ;; 						   (tile-tileset subtile)
+;; 						      ;; 						   (tile-x subtile)
+;; 						      ;; 						   (tile-y subtile))))))
+;; 						      )
 						 
-						 (when tile
-						   (draw tile
-							 :rotation rotation
-							 :renderer renderer
-							 :x (* x 50)
-							 :y (* y 50)
-							 :opacity (layer-opacity layer))))))))))))
-      (if (hit-tool-chosen?)
-	  (let ((pairs (pairs x-coords y-coords)))
-	    (dolist (pair pairs)
-	      (let* ((x (car pair))
-		     (y (cadr pair))
-		     (hit-tile (get-prop-in hitdata (list x y))))
+;; 						 (when tile
+;; 						   (draw tile
+;; 							 :rotation rotation
+;; 							 :renderer renderer
+;; 							 :x (* x 50)
+;; 							 :y (* y 50)
+;; 							 :opacity (layer-opacity layer))))))))))))
+;;       (if (hit-tool-chosen?)
+;; 	  (let ((pairs (pairs x-coords y-coords)))
+;; 	    (dolist (pair pairs)
+;; 	      (let* ((x (car pair))
+;; 		     (y (cadr pair))
+;; 		     (hit-tile (get-prop-in hitdata (list x y))))
 		
-		(draw-colored-rect (* x 50)
-				   (* y 50)
-				   (if hit-tile
-				       0
-				       255)
-				   (if hit-tile
-				       255 0)
-				   0
-				   127)))))
+;; 		(draw-colored-rect (* x 50)
+;; 				   (* y 50)
+;; 				   (if hit-tile
+;; 				       0
+;; 				       255)
+;; 				   (if hit-tile
+;; 				       255 0)
+;; 				   0
+;; 				   127)))))
 
-      (dolist (sprite sprites)
-      	(draw sprite :renderer renderer))
+;;       (dolist (sprite sprites)
+;;       	(draw sprite :renderer renderer))
       	
 
-      (dolist (animation animations)
-	(draw animation :renderer renderer)))))
+;;       (dolist (animation animations)
+;; 	(draw animation :renderer renderer)))))
 
 (defun-export! select-map-layer (root map-id layer-id)
   ;;(clear-lisp-dq :MAP)

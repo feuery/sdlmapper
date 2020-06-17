@@ -12,6 +12,10 @@
 (defvar qmapper-editor-port 3003
   "QMapper's editor server's port")
 
+;; (progn (qmapper-load-tileset "/tangorauta/projects/qt-test/kaunis_tileset.jpeg" "nätti")
+;;        (qmapper-new-map 10 10))
+;; (qmapper-list-maps)
+
 
 (defun qmapper-connect-editor (server)
   "This function sets the ip where you're running qmapper"

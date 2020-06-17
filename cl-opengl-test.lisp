@@ -4,7 +4,7 @@
 
 
 (defun move (obj)
-  (with-slots (position) obj
+  (with-slots* (position) obj
     (incf (car position) 1)
     (incf (cadr position) 1)))
 
@@ -35,7 +35,7 @@
 
 (defmultimethod handle-drag  (list :editor :map) (root x y left-or-right)
   (if (equalp left-or-right :left)
-      (with-slots (chosentool chosenmap chosenlayer chosentile) root
+      (with-slots* (chosentool chosenmap chosenlayer chosentile) root
 	(let* ((tile-x (floor (/ x 50)))
 	       (tile-y (floor (/ y 50)))
 	       (tool-is-already-applied-here (get-in dragged-table (list tile-x tile-y))))
@@ -45,7 +45,7 @@
 
 (defmultimethod handle-drag (list :editor :tileset) (root x y left-or-right)
   (if (equalp left-or-right :left)
-      (with-slots (tilesets chosentileset chosentile) root
+      (with-slots* (tilesets chosentileset chosentile) root
 	(let* ((tile-x (floor (/ x 50)))
 	       (tile-y (floor (/ y 50)))
 	       (tile (get-in (tileset-tiles (nth chosentileset tilesets)) (list tile-x tile-y))))
@@ -117,11 +117,20 @@
 		  (handler-case 
 		      (if (or (sdl2:mouse-state-p +left-mouse-button+)
 		      	      (sdl2:mouse-state-p +right-mouse-button+))
-		      	  (handle-drag (correct-document)
-		      		       x y 
-		      		       (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
-		      			     ((sdl2:mouse-state-p +right-mouse-button+) :right)
-		      			     (t nil))))
+			  (if (equalp app-state :editor)
+      
+			      (setf qmapper.root:*document*
+				(handle-drag qmapper.root:*document*
+					     x y 
+					     (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
+						   ((sdl2:mouse-state-p +right-mouse-button+) :right)
+						   (t nil))))
+			      (setf qmapper.root:*engine-document*
+				(handle-drag qmapper.root:*engine-document*
+					     x y 
+					     (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
+						   ((sdl2:mouse-state-p +right-mouse-button+) :right)
+						   (t nil))))))
 		    (error (c)
 		      (format t "tool-error: ~a~%" c)
 		      ;; (format t "bt: ~a~%" (sb-debug:list-backtrace))

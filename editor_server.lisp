@@ -1,6 +1,7 @@
 (defpackage :qmapper.editor-server
   (:use :common-lisp
 	:qmapper.app-state
+	:qmapper.animatedsprite
 	:qmapper.sprite
 	:qmapper.tools
         :qmapper.std
@@ -77,25 +78,18 @@
 	 car)))
 	
 
-(defparameter type->class-map (fset:map ;;("TILE" (class-of (make-instance 'qmapper.tile:tile)))
-			       ("TILESET" (class-of (make-instance 'qmapper.tileset:tileset
-								   :renderer :DEMO
-								   :tileset-path :DEMO)))
-			       ("MAP" (class-of (make-instance 'qmapper.map:qmap :layer-w :DEMO)))
-			       ("LAYER" (class-of (make-instance 'qmapper.layer:layer)))))
-
 ;; TODO replace this massive map with a qmapper.tools:deftool lookalike
 
 (defparameter *message->event* (map ("LIST-TILESETS" (lambda (message client-socket params)
 						       (format (socket-stream client-socket)
-							       (with-slots (tilesets) *document*
+							       (with-slots* (tilesets) *document*
 								 (->> (zipmap 
 								       (mapcar #'tileset-id tilesets)
 								       (mapcar #'tileset-name tilesets))
 								      (format nil "(~{~s~^~%~})"))))))
 				    ("LIST-MAPS" (lambda (message client-socket params)
 				    		   (format (socket-stream client-socket) "~a~%"
-				    			   (with-slots (qmapper.root:maps) *document*
+				    			   (with-slots* (qmapper.root:maps) *document*
 							     (mapcar (lambda (map)
 								       (list (prin1-to-string (map-id map))
 									     (prin1-to-string (map-name map))))
@@ -103,16 +97,18 @@
 				    ("CREATE-MAP" (lambda (message client-socket params)
 						    (let ((map-w (parse-integer (car params)))
 							  (map-h (parse-integer (cadr params))))
-						      (with-slots (qmapper.root:maps) *document*
-							(push (make-instance 'qmap :layer-w map-w :layer-h map-h :layer-count 1)
-							      qmapper.root:maps)))))
+						      (setf *document*
+							    (with-slots* (qmapper.root:maps) *document*
+							      (push (-> (make-map)
+									(init-map :layer-w map-w :layer-h map-h :layer-count 1))
+								    qmapper.root:maps))))))
 				    
 				    ("SELECT-TILESET" (lambda (message client-socket params)
 							(let* ((searched-id (parse-integer (car params)))
 							       (index (->> (range (length (root-tilesets *document*)))
 									   (mapcar #'dec)
 									   (remove-if-not (lambda (index)
-											    (with-slots (qmapper.tileset:id) (nth index (root-tilesets *document*))
+											    (with-slots* (qmapper.tileset:id) (nth index (root-tilesets *document*))
 											      (equalp searched-id qmapper.tileset:id)))))))
 							  (when index
 							    (setf (root-chosentileset *document*) (car index))
@@ -130,10 +126,14 @@
 						      (let* ((tileset-path (car params))
 							     (tileset-name (cadr params)))
 							(schedule-once (lambda ()
-									 (with-slots (tilesets) *document*
-									   (push
-									    (make-instance 'qmapper.tileset:tileset :name tileset-name :tileset-path tileset-path :renderer *renderer*)
-									    tilesets)))))))
+									 (setf *document*
+									       (with-slots* (tilesets) *document*
+										 (push
+										  (-> (make-tileset
+										       :name tileset-name)
+										      (init-tileset 
+										       :tileset-path tileset-path :renderer *renderer*))
+										  tilesets))))))))
 				    ("LIST-TOOLS" (lambda (message client-socket params)
 						    (->> *tools*
 							 (fset:convert 'list)
@@ -152,14 +152,14 @@
 							 (let* ((chosenmap-index (find-map-index (root-maps *document*) #'map-id (parse-integer (car params))))
 								;;(_ (format t "(nth ~a ~a)~%" chosenmap-index (root-maps *document*)))
 								(chosenmap (nth chosenmap-index (root-maps *document*))))
-							   (with-slots (layers) chosenmap
+							   (with-slots* (layers) chosenmap
 							     (let ((layers (->> layers
 										(mapcar (lambda (l)
 											  (list (layer-id l) (layer-name l)))))))
 							       (format t "layers going to emacs: ~a~%" layers)
 							       (format (socket-stream client-socket) "~a~%" (prin1-to-string layers)))))
 							 (let* ((chosenmap (root-get-chosen-map *document*)))
-							   (with-slots (layers) chosenmap
+							   (with-slots* (layers) chosenmap
 							     (let ((layers (->> layers
 										(mapcar (lambda (l)
 											  (list (layer-id l) (layer-name l)))))))
@@ -167,36 +167,39 @@
 				    ("CREATE-LAYER" (lambda (message client-socket params)
 						      ;; FIXME niin hyvää copypastaa
 						      ;;(format t "params in create-layer: ~a~%" params)
-						      (if (pos? (length params))
-							  (with-slots (chosenlayer maps) *document*
-							    (let* ((map-id (car params))
-								   (chosenmap-index (find-map-index (root-maps *document*) #'map-id (parse-integer map-id)))
-								   (chosenmap (nth chosenmap-index maps))
-								   (amount-of-layers (length (map-layers chosenmap))))
-							      
-							      (push-layer chosenmap)
-							      (setf chosenlayer amount-of-layers)))							  
-							  (with-slots (chosenlayer) *document*
-							    (let* ((chosenmap (root-get-chosen-map *document*))
-								   (amount-of-layers (length (map-layers chosenmap))))
-							      (push-layer chosenmap)
-							      (setf chosenlayer amount-of-layers))))))
+						      (setf *document* 
+							    (if (pos? (length params))
+								(with-slots* (chosenlayer maps) *document*
+								  (let* ((map-id (car params))
+									 (chosenmap-index (find-map-index (root-maps *document*) #'map-id (parse-integer map-id)))
+									 (chosenmap (nth chosenmap-index maps))
+									 (amount-of-layers (length (map-layers chosenmap))))
+								    
+								    (push-layer chosenmap)
+								    (setf chosenlayer amount-of-layers)))							  
+								(with-slots* (chosenlayer) *document*
+								  (let* ((chosenmap (root-get-chosen-map *document*))
+									 (amount-of-layers (length (map-layers chosenmap))))
+								    (push-layer chosenmap)
+								    (setf chosenlayer amount-of-layers)))))))
 				    ("SELECT-LAYER" (lambda (message client-socket params)
 						      (format t "params in select-layer: ~a ~%" params)
-						      (cond ((equalp (length params) 2)
-							     (with-slots (chosenmap chosenlayer maps) *document*
-							       (let* ((new-map-index (find-map-index maps #'map-id (parse-integer (car params))))
-								      (map (nth new-map-index maps)))
-								 (with-slots (layers) map
-								   (let ((layer-index (find-map-index layers #'layer-id (parse-integer (cadr params)))))
-								     (setf chosenmap new-map-index)
-								     (setf chosenlayer layer-index))))))
-							    ((equalp (length params) 1)
-							     (with-slots (chosenmap chosenlayer maps) *document*
-							       (let* ((map (root-get-chosen-map *document*)))
-								 (with-slots (layers) map
-								   (let ((layer-index (find-map-index layers #'layer-id (cadr params))))
-								     (setf chosenlayer layer-index)))))))))
+						      (setf *document*
+							    (cond ((equalp (length params) 2)
+								   (with-slots* (chosenmap chosenlayer maps) *document*
+								     (let* ((new-map-index (find-map-index maps #'map-id (parse-integer (car params))))
+									    (map (nth new-map-index maps)))
+								       (setf (nth new-map-index maps)
+									     (with-slots* (layers) map
+									       (let ((layer-index (find-map-index layers #'layer-id (parse-integer (cadr params)))))
+										 (setf chosenmap new-map-index)
+										 (setf chosenlayer layer-index))))))
+								   ((equalp (length params) 1)
+								    (with-slots* (chosenmap chosenlayer maps) *document*
+								      (let* ((map (root-get-chosen-map *document*)))
+									(with-slots* (layers) map
+									  (let ((layer-index (find-map-index layers #'layer-id (cadr params))))
+									    (setf chosenlayer layer-index)))))))))))
 				    
 				    ("MAP-INFO" (lambda (message client-socket params)
 						  (let ((id (car params)))
@@ -209,83 +212,79 @@
 								 obj->alist
 								 clean-map
 								 prin1-to-string)))))
-				    ("GET-PROPS" (lambda (message client-socket params)
-						   (let* ((result (class-props-str (fset:lookup type->class-map (car params)))))
-						     (format t "result: ~a~%" (prin1-to-string result))
-						     (format (socket-stream client-socket) "~a" (prin1-to-string result)))))
-				    ("SET-PROP" (lambda (message client-socket params)
-						  (let ((object-type (car params)))
-						    (if (equalp object-type "LAYER")
-							(destructuring-bind (object-type map-id layer-id name value) params
-							  (let* ((object (get-layer-obj *document* (parse-integer map-id) (parse-integer layer-id)))
-								 (slot (->> object
-									    class-of
-									    sb-mop:class-slots
-									    (remove-if-not (lambda (slot-val)
-											     (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
-									    car)))
-							    (setf (sb-mop:slot-value-using-class (class-of object) object slot) value)))
-							(destructuring-bind (object-type object-id name value) params
-							  (let* ((object (get-obj *document* object-type (parse-integer object-id)))
-								 (slot (->> object
-									    class-of
-									    sb-mop:class-slots
-									    (remove-if-not (lambda (slot-val)
-											     (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
-									    car)))
-							    (setf (sb-mop:slot-value-using-class (class-of object) object slot) value)))))))
-				    ("REVERSE-BOOL-PROP" (lambda (message client-socket params)
-							   (let ((object-type (car params)))
-							     (if (equalp object-type "LAYER")
-								 (destructuring-bind (object-type map-id layer-id name) params
-								   (let* ((object (get-layer-obj *document* (parse-integer map-id) (parse-integer layer-id)))
-									  (slot (->> object
-										     class-of
-										     sb-mop:class-slots
-										     (remove-if-not (lambda (slot-val)
-												      (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
-										     car))
-									  (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
-								     (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))
-								 (destructuring-bind (object-type object-id name) params
-								   (let* ((object (get-obj *document* object-type (parse-integer object-id)))
-									  (slot (->> object
-										     class-of
-										     sb-mop:class-slots
-										     (remove-if-not (lambda (slot-val)
-												      (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
-										     car))
-									  (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
-								     (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))))))
+				    ;; ("GET-PROPS" (lambda (message client-socket params)
+				    ;; 		   (let* ((result (class-props-str (fset:lookup type->class-map (car params)))))
+				    ;; 		     (format t "result: ~a~%" (prin1-to-string result))
+				    ;; 		     (format (socket-stream client-socket) "~a" (prin1-to-string result)))))
+				    ;; ("SET-PROP" (lambda (message client-socket params)
+				    ;; 		  (let ((object-type (car params)))
+				    ;; 		    (if (equalp object-type "LAYER")
+				    ;; 			(destructuring-bind (object-type map-id layer-id name value) params
+				    ;; 			  (let* ((object (get-layer-obj *document* (parse-integer map-id) (parse-integer layer-id)))
+				    ;; 				 (slot (->> object
+				    ;; 					    class-of
+				    ;; 					    sb-mop:class-slots
+				    ;; 					    (remove-if-not (lambda (slot-val)
+				    ;; 							     (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
+				    ;; 					    car)))
+				    ;; 			    (setf (sb-mop:slot-value-using-class (class-of object) object slot) value)))
+				    ;; 			(destructuring-bind (object-type object-id name value) params
+				    ;; 			  (let* ((object (get-obj *document* object-type (parse-integer object-id)))
+				    ;; 				 (slot (->> object
+				    ;; 					    class-of
+				    ;; 					    sb-mop:class-slots
+				    ;; 					    (remove-if-not (lambda (slot-val)
+				    ;; 							     (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
+				    ;; 					    car)))
+				    ;; 			    (setf (sb-mop:slot-value-using-class (class-of object) object slot) value)))))))
+				    ;; ("REVERSE-BOOL-PROP" (lambda (message client-socket params)
+				    ;; 			   (let ((object-type (car params)))
+				    ;; 			     (if (equalp object-type "LAYER")
+				    ;; 				 (destructuring-bind (object-type map-id layer-id name) params
+				    ;; 				   (let* ((object (get-layer-obj *document* (parse-integer map-id) (parse-integer layer-id)))
+				    ;; 					  (slot (->> object
+				    ;; 						     class-of
+				    ;; 						     sb-mop:class-slots
+				    ;; 						     (remove-if-not (lambda (slot-val)
+				    ;; 								      (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
+				    ;; 						     car))
+				    ;; 					  (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
+				    ;; 				     (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))
+				    ;; 				 (destructuring-bind (object-type object-id name) params
+				    ;; 				   (let* ((object (get-obj *document* object-type (parse-integer object-id)))
+				    ;; 					  (slot (->> object
+				    ;; 						     class-of
+				    ;; 						     sb-mop:class-slots
+				    ;; 						     (remove-if-not (lambda (slot-val)
+				    ;; 								      (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
+				    ;; 						     car))
+				    ;; 					  (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
+				    ;; 				     (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))))))
 				    ("LOAD-SPRITE" (lambda (message client-socket params)
 				    		     (destructuring-bind (path sprite-name) params
 				    		       (schedule-once (lambda ()
 									(let ((chosen-map (root-get-chosen-map *document*)))
-									  (with-slots (sprites) chosen-map
-									    (let ((sprite (make-instance 'qmapper.sprite:qsprite :name sprite-name
-													 :sprite-path path :renderer *renderer*)))
-									      (push
-									       sprite
-									       sprites))))))
+									  (setf (root-get-chosen-map *document*)
+										(with-slots* (sprites) chosen-map
+										  (let ((sprite (-> (make-sprite  :name sprite-name)
+												    (init-sprite :sprite-path path :renderer *renderer*))))
+										    (push
+										     sprite
+										     sprites)))))))
 						       (format (socket-stream client-socket) "Scheduled sprite loading~%"))))
 				    ("LOAD-ANIMATION" (lambda (message client-socket params)
 							(destructuring-bind (path framecount name) params
 							  (schedule-once (lambda ()
 									   (let ((chosen-map (root-get-chosen-map *document*)))
-									     (with-slots (qmapper.map:animatedsprites) chosen-map
-									       (push
-										(make-instance 'qmapper.animatedsprite:animatedsprite
-											       :path path
-											       :framecount (parse-integer framecount)
-											       :renderer *renderer*)
-										animatedsprites))))))))))
-									   
-
-
-
-
-
-
+									     (setf chosen-map
+										   (with-slots* (qmapper.map:animatedsprites) chosen-map
+										     (push
+										      (-> (make-animatedsprite)
+											  (init-animated-sprite
+											   :path path
+											   :framecount (parse-integer framecount)
+											   :renderer *renderer*))
+										      animatedsprites)))))))))))
 
 
 (defun process-editor-events (client-socket socket-stream message)

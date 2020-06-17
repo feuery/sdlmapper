@@ -1,5 +1,6 @@
 (defpackage :qmapper.tileset
   (:use :common-lisp
+	:multimethods
 	:qmapper.obj
 	:cl-arrows
 	:qmapper.obj
@@ -16,30 +17,18 @@
 		:add-to-drawingqueue  :clear-drawingqueue
 		:set-img-x :set-img-y
 		:do-schedule-lambda)
-  (:export :tileset-id :tileset-name :id :tileset :tileset-tiles))
+  (:export :init-tileset :tileset-id :tileset-name :id :tileset :tileset-tiles))
 
 (in-package :qmapper.tileset)
 
 (defvar *amount-of-tilesets* 0)
 
-(defclass tileset ()
-  ((name :initarg :name :accessor tileset-name :initform (format nil "Tileset ~a" *amount-of-tilesets*))
-   (id :initform (random 99999) :accessor tileset-id)
-   (tiles :initarg :tiles :accessor tileset-tiles)
-   (width :initarg :width :accessor tileset-width)
-   (height :initarg :height :accessor tileset-height)))
-
-
-;; (defcppclass Tileset
-;;     (public
-;;      (fields
-;;       (name "Tileset 1")
-;;       ;; (vertexShader nullptr)
-;;       ;; (fragmentShader nullptr)
-;;       (tiles '())
-;;       (w 0) 				; in tiles
-;;       (h 0))))
-					; in tiles
+(defclass* tileset
+    (name (format nil "Tileset ~a" *amount-of-tilesets*))
+  (id (random 99999))
+   (tiles nil)
+   (width nil)
+  (height nil))
 
 (defun-export! get-tile (tileset x y)
   (get-in (tileset-tiles tileset) (list x y)))
@@ -74,13 +63,13 @@
 
 (defun-export! load-texture-splitted (path renderer)
   (let* ((root-img (create-sprite :texture-path path :renderer renderer))
-	 (size (sprite-size root-img)))
+	 (size (obj-size root-img)))
     (assert (> (first size) 0))
     (let* ((w (/ (first size) 50))
 	   (h (/ (second size) 50))
 	   (textures (mapcar (lambda (x)
 			       (mapcar (lambda (y)
-					 (make-instance 'qmapper.tile:tile :x x :y y :tileset (tileset-count!) :rotation 0
+					 (make-tile :x x :y y :tileset (tileset-count!) :rotation 0
 						    :sprite
 						    (create-subsprite root-img
 								      (list (* x 50) (* y 50)
@@ -94,20 +83,19 @@
        w
        h))))
 
-(defmethod initialize-instance :after ((tset tileset) &key renderer tileset-path)
+(defun init-tileset (tset &key renderer tileset-path)
   (assert renderer)
   (assert tileset-path)
   (unless (equalp renderer :DEMO)
     (multiple-value-bind (loaded-tiles loaded-width loaded-height) (load-texture-splitted tileset-path renderer)
       ;; TODO this could be macrofied. Could with-slots be made immutable?
-      (with-slots (tiles width height) tset
+      (with-slots* (tiles width height) tset
 	(setf tiles loaded-tiles)
 	(setf width loaded-width)
 	(setf height loaded-height)))))
 
-(defmethod draw ((tset tileset) &key renderer (x 0) (y 0))
-
-  (with-slots (width height tiles) tset
+(defmultimethod draw 'tileset (tset &key renderer (x 0) (y 0)) 
+  (with-slots* (width height tiles) tset
     (let* ((xs (mapcar #'dec (range width)))
 	   (ys (mapcar #'dec (range height)))
 	   ;; those ^^ are the indexes to tiles
