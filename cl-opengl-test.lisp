@@ -9,7 +9,7 @@
     (incf (cadr position) 1)))
 
 (defun render (sprite renderer)
-  (qmapper.obj:draw sprite :renderer renderer))
+  (qmapper.obj:draw sprite (fset:map ("RENDERER" renderer))))
 
 (defparameter *fps* 0)
 (defparameter *fps-reset* (sdl2:get-ticks))
@@ -21,14 +21,14 @@
   (let* ((chosen-tileset (root-chosentileset root))
 	 (tileset (nth chosen-tileset (root-tilesets root))))
     (if tileset
-	(draw tileset :renderer renderer))))
+	(draw tileset (fset:map ("RENDERER" renderer))))))
 
 (defmultimethod render-scene (list :editor :map) (renderer root)
   (let* ((chosen-map (root-chosenmap root)))
     (when (>= chosen-map 0)
       (let ((map (nth chosen-map (root-maps root))))
 	(if map
-	    (draw map :renderer renderer))))))
+	    (draw map (fset:map ("RENDERER" renderer))))))))
 
 (defmulti handle-drag #'equalp (root x y left-or-right)
   (list app-state editor-state))

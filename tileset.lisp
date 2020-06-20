@@ -94,20 +94,24 @@
 	(setf width loaded-width)
 	(setf height loaded-height)))))
 
-(defmultimethod draw 'tileset (tset &key renderer (x 0) (y 0)) 
-  (with-slots* (width height tiles) tset
-    (let* ((xs (mapcar #'dec (range width)))
-	   (ys (mapcar #'dec (range height)))
-	   ;; those ^^ are the indexes to tiles
-	   (pairs (pairs xs ys)))
-      ;; TODO this loop could be optimized by keeping a hold of the original surface and drawing it instead of tiles
-      (dolist (pair pairs)
-	(let* ((x-index (car pair))
-	       (y-index (cadr pair))
-	       (tile-obj (get-in tiles pair)))
-	  (draw tile-obj :renderer renderer
-		:x (+ x (* x-index 50))
-		:y (+ y (* y-index 50))))))))
+(defmultimethod draw 'tileset (tset args)
+  (let* ((renderer (fset:lookup args "RENDERER"))
+	 (x (or (fset:lookup args "X") 0))
+	 (y (or (fset:lookup args "Y") 0)))
+    (with-slots* (width height tiles) tset
+		 (let* ((xs (mapcar #'dec (range width)))
+			(ys (mapcar #'dec (range height)))
+			;; those ^^ are the indexes to tiles
+			(pairs (pairs xs ys)))
+		   ;; TODO this loop could be optimized by keeping a hold of the original surface and drawing it instead of tiles
+		   ;; (format t "Drawing a tileset with pairs ~a~%" pairs)
+		   (dolist (pair pairs)
+		     (let* ((x-index (car pair))
+			    (y-index (cadr pair))
+			    (tile-obj (get-in tiles pair)))
+		       (draw tile-obj (fset:map ("RENDERER" renderer)
+						("X" (+ x (* x-index 50)))
+						("Y" (+ y (* y-index 50)))))))))))
 	    
   ;; ladataan tile-tekstuuri muodossa jossa me saadaan yksittäinen 50x50 - tile viittaamalla siihen [x][y]
   ;; sen jälkeen asetetaan tilesetin width ja height tileissä

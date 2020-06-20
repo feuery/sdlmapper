@@ -68,10 +68,11 @@
 	(setf obj-sprite (create-sprite :renderer renderer :texture-path sprite-path)))
       sprite))
 
-(defmultimethod draw 'sprite (sprite &key renderer)
-  (with-slots* (x y angle obj-sprite) sprite
-    (setf obj-sprite 
-	  (with-slots* (position) obj-sprite
-	    (setf position (list x y)
-		  (gethash 'angle obj-sprite) angle)
-	    (draw obj-sprite :renderer renderer)))))
+(defmultimethod draw 'sprite (sprite args)
+  (let ((renderer (fset:lookup args "RENDERER")))
+    (with-slots* (x y angle obj-sprite) sprite
+		 (setf obj-sprite 
+		       (with-slots* (position) obj-sprite
+				    (setf position (list x y)
+					  (gethash 'angle obj-sprite) angle)
+				    (draw obj-sprite (fset:map ("RENDERER" renderer))))))))

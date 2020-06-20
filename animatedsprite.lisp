@@ -35,14 +35,15 @@
     (with-slots* (currentframeid) animation
       (setf currentframeid (mod (inc currentframeid) maxframes)))))
 
-(defmultimethod draw 'animatedsprite (animation &key renderer)
-  (with-slots* (sprites x y currentframeid angle) (-> animation
-						      animatedsprite-advanceframeifneeded!)
-    (setf (nth currentframeid sprites)
-      (with-slots* (position) (nth currentframeid sprites)
-	(setf position (list x y))
-	(setf (obj-sprite-angle (nth currentframeid sprites)) angle)
-	(draw (nth currentframeid sprites) :renderer renderer)))))
+(defmultimethod draw 'animatedsprite (animation args)
+  (let ((renderer (fset:lookup args "RENDERER")))
+    (with-slots* (sprites x y currentframeid angle) (-> animation
+							animatedsprite-advanceframeifneeded!)
+		 (setf (nth currentframeid sprites)
+		       (with-slots* (position) (nth currentframeid sprites)
+				    (setf position (list x y))
+				    (setf (obj-sprite-angle (nth currentframeid sprites)) angle)
+				    (draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))
 
 (defmultimethod set-pos 'animatedsprite (animation new-x new-y)
   (with-slots* (x y) animation

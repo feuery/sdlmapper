@@ -35,17 +35,19 @@
 	  opacity 255)
     (sdl2:set-texture-blend-mode texture :blend)))
 
-(defmulti draw #'equalp (drawable)
+(defmulti draw #'equalp (drawable args)
   (fset:lookup drawable "TYPE"))
 
 
-(defmultimethod draw 'obj (obj &key renderer)
-  (with-slots* (position texture size opacity angle) obj
-    (sdl2:with-rects ((dst-rect (car position) (cadr position)
-				(car size) (cadr size)))
-      (sdl2:set-texture-alpha-mod texture  opacity)
-      (sdl2:render-copy-ex renderer texture :dest-rect dst-rect
-					    :angle angle))))
+(defmultimethod draw 'obj (obj args)
+  (let ((renderer (fset:lookup args "RENDERER")))
+    (with-slots* (position texture size opacity angle) obj
+		 ;; (format t "Drawing obj sprite at ~a~%" position)
+		 (sdl2:with-rects ((dst-rect (car position) (cadr position)
+					     (car size) (cadr size)))
+		   (sdl2:set-texture-alpha-mod texture  opacity)
+		   (sdl2:render-copy-ex renderer texture :dest-rect dst-rect
+					:angle angle)))))
 
 (defun xor (&rest args)
   (flet ((xor2 (a b) (not (eq (not a) (not b)))))

@@ -15,15 +15,23 @@
   (rotation 0)
   (sprite nil))
 
-(defmultimethod draw 'tile (tile-obj &key renderer x y rotation (opacity 255))
-  (let ((tile-op opacity))
+(defmultimethod draw 'tile (tile-obj args)
+  (let* ((renderer (fset:lookup args "RENDERER"))
+	 (x (fset:lookup args "X"))
+	 (y (fset:lookup args "Y"))
+	 (rotation (fset:lookup args "ROTATION"))
+	 (opacity (or (fset:lookup args "OPACITY") 255))
+	 (tile-op opacity))
+    ;; (format t "Drawing tile at ~a~%" (list x y))
     (with-slots* (sprite) tile-obj
-      (let ((rotation (or rotation
-			  (tile-rotation tile-obj))))
-	(with-slots* (angle position opacity) sprite
-	  (setf angle (* 90 rotation))
-	  (setf position (list x y))
-	  (setf opacity tile-op)
-	  (draw sprite :renderer renderer))))))
+		 (setf sprite
+		       (let* ((rotation (or rotation
+					    (tile-rotation tile-obj)))
+			      (new-sprite
+			       (with-slots* (angle position opacity) sprite
+					    (setf angle (* 90 rotation))
+					    (setf position (list x y))
+					    (setf opacity tile-op))))
+			 (draw new-sprite (fset:map ("RENDERER" renderer))))))))
 
 ;; (export-all :qmapper.tile)
