@@ -716,20 +716,20 @@ by setting this var to nil and killing every process on the way. TODO make a bet
   (unless (car slot-val-pairs)
     (format t "First slot is nil. Have you converted from the clos defclass perhaps?~%")
     (error 'error ))
-    
+  
   (let* ((ctr-name (create-symbol (str "make-" (symbol-name class-name))))
-	(slots (mapcar #'first slot-val-pairs))
-	(ctr-params `(&key ,@slot-val-pairs))
+	 (slots (mapcar #'first slot-val-pairs))
+	 (ctr-params `(&key ,@slot-val-pairs))
 	 (getters (->> slots
-			    (mapcar (lambda (slot)
-				      (list slot
-					    (create-symbol (str (symbol-name class-name) "-" (symbol-name slot))))))
-			    (mapcar (lambda (slot-getter-name)
-				      (destructuring-bind (slot getter-name) slot-getter-name
-					  `(progn
-					     (defun ,getter-name (obj)
-					       (fset:lookup obj (symbol-name ',slot)))
-					     (export ',getter-name))))))))
+		       (mapcar (lambda (slot)
+				 (list slot
+				       (create-symbol (str (symbol-name class-name) "-" (symbol-name slot))))))
+		       (mapcar (lambda (slot-getter-name)
+				 (destructuring-bind (slot getter-name) slot-getter-name
+				   `(progn
+				      (defun ,getter-name (obj)
+					(fset:lookup obj (symbol-name ',slot)))
+				      (export ',getter-name))))))))
     `(progn
        ,@getters
        (defun-export! ,ctr-name ,ctr-params
@@ -746,17 +746,27 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 ;; (lol-slot-1 (make-lol))
 
 (defmacro with-slots* (slots obj &rest body)
+  "with-slots lookalike that lets you setf fields inside immutable fset maps. It has some issues with composing multiple with-slots*'s. Macro returns a new fset map with modified keys, unless first form of body is equalp to :read-only, in which case it returns whatever body returns"
   (let ((obj-sym (if (symbolp obj)
 		     obj
-		     (gensym))))
-    `(let ((,obj-sym (fset:convert 'hash-table ,obj :test #'equalp)))
-       ,@(reduce (lambda (body slot)
-		   (subst `(gethash ,(symbol-name slot) ,obj-sym)
-			  slot
-			  body))
-		 slots
-		 :initial-value body)
-       (fset:convert 'map ,obj-sym))))
+		     (gensym)))
+	(read-only? (equalp (car body) :read-only)))
+    (if read-only?
+	`(let ((,obj-sym (fset:convert 'hash-table ,obj :test #'equalp)))
+	   ,@(reduce (lambda (body slot)
+		       (subst `(gethash ,(symbol-name slot) ,obj-sym)
+			      slot
+			      body))
+		     slots
+		     :initial-value body))
+	`(let ((,obj-sym (fset:convert 'hash-table ,obj :test #'equalp)))
+	   ,@(reduce (lambda (body slot)
+		       (subst `(gethash ,(symbol-name slot) ,obj-sym)
+			      slot
+			      body))
+		     slots
+		     :initial-value body)
+	   (fset:convert 'map ,obj-sym)))))
 
 (defmethod fset:lookup ((collection hash-table) key)
   (gethash key collection :not-found))

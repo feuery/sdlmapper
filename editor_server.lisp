@@ -96,7 +96,7 @@
 
 (defmessage "LIST-MAPS"  (message client-socket params)
   (format (socket-stream client-socket) "~a~%"
-	  (with-slots* (qmapper.root:maps) *document*
+	  (with-slots* (qmapper.root:maps) *document* :read-only
 		       (mapcar (lambda (map)
 				 (list (prin1-to-string (map-id map))
 				       (prin1-to-string (map-name map))))
