@@ -40,7 +40,9 @@
 	       (tile-y (floor (/ y 50)))
 	       (tool-is-already-applied-here (get-in dragged-table (list tile-x tile-y))))
 	  (unless tool-is-already-applied-here
-	    (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y (clone chosentile))
+	    (let ((result (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y (clone chosentile))))
+	      (if result
+		  (setf root result)))
 	    (setf (nth tile-y (nth tile-x dragged-table)) t))))))
 
 (defmultimethod handle-drag (list :editor :tileset) (root x y left-or-right)
@@ -77,10 +79,11 @@
 (defvar +right-mouse-button+ 3)
 
 (defun start-drag (root)
-  (let* ((map (qmapper.root:root-get-chosen-map root))
-	 (w (map-width map))
-	 (h (map-height map)))
-    (setf dragged-table (make-2d w h nil))))
+  (let ((map (qmapper.root:root-get-chosen-map root)))
+    (when map
+      (let ((w (map-width map))
+	    (h (map-height map)))
+	(setf dragged-table (make-2d w h nil))))))
 
 (defun stop-drag ()
   (setf dragged-table nil))

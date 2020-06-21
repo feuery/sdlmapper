@@ -83,11 +83,14 @@
 (defun set-tile-at (map layer x y tile)
   (assert (numberp layer))
   (handler-case 
-      (with-slots (layers) map
-	(let ((layer-obj (nth layer layers)))
-	  (with-slots (qmapper.layer:tiles) layer-obj
-	    (let ((inner-list (nth x tiles)))
-	      (setf (nth y inner-list) tile)))))
+      (with-slots* (layers) map
+		   (let ((layer-obj (nth layer layers)))
+		     (setf (nth layer layers)
+			   (with-slots* (qmapper.layer:tiles) layer-obj
+					(setf qmapper.layer:tiles
+					      (let ((inner-list (nth x tiles)))
+						(setf (nth y inner-list) tile)
+						innter-list))))))
     (error (c)
       (format t "error: ~a~%" c))))
       
@@ -172,15 +175,15 @@
     (set-engine-doc (set-root-chosenmap! engine-doc map-id))))
 
 (defun-export! map-width (map)
-  (with-slots (layers) map
+  (with-slots* (layers) map
     (layer-width (car layers))))
 
 (defun-export! map-height (map)
-  (with-slots (layers) map
+  (with-slots* (layers) map
     (layer-height (car layers))))
 
 (defun get-tile-at (layer x y)
-  (with-slots (qmapper.layer:tiles) layer
+  (with-slots* (qmapper.layer:tiles) layer
     (get-in qmapper.layer:tiles (list x y))))
   
 (defun fetch-tile-from-tileset (tileset x y)

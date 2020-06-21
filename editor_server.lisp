@@ -63,7 +63,7 @@
 	       (t (error (format nil "Didn't recognize ~a" type))))))
     (->> objs
 	 (remove-if-not (lambda (obj)
-			  (with-slots (id) obj
+			  (with-slots* (id) obj
 			    (equalp id searched-id))))
 	 car)))
 

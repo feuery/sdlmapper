@@ -48,7 +48,7 @@
       	     (img (get-prop-in tiles (list x y))))
 	(if img
 	    (progn
-	      (with-slots (qmapper.obj:position) *this*
+	      (with-slots* (qmapper.obj:position) *this*
 		(setf position (list (truncate (* x 50.0))
 				     (truncate (* y 50.0)))))
               (add-to-drawqueue img))
