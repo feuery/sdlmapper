@@ -90,8 +90,9 @@
 			   (with-slots* (qmapper.layer:tiles) layer-obj
 					(setf qmapper.layer:tiles
 					      (let ((inner-list (nth x tiles)))
+						(format t "inner-list: ~a~%and tile~a~%" inner-list tile)
 						(setf (nth y inner-list) tile)
-						innter-list))))))
+						inner-list))))))
     (error (c)
       (format t "error: ~a~%" c))))
       

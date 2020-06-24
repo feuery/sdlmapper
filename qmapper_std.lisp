@@ -750,23 +750,31 @@ by setting this var to nil and killing every process on the way. TODO make a bet
   (let ((obj-sym (if (symbolp obj)
 		     obj
 		     (gensym)))
-	(read-only? (equalp (car body) :read-only)))
+	(read-only? (equalp (car body) :read-only))
+	(force-convert-to-fset? (equalp (car body) :force-fset)))
     (if read-only?
-	`(let ((,obj-sym (fset:convert 'hash-table ,obj :test #'equalp)))
+	`(let ((,obj-sym (if (hash-table-p ,obj)
+			     ,obj
+			     (fset:convert 'hash-table ,obj :test #'equalp))))
 	   ,@(reduce (lambda (body slot)
 		       (subst `(gethash ,(symbol-name slot) ,obj-sym)
 			      slot
 			      body))
 		     slots
 		     :initial-value body))
-	`(let ((,obj-sym (fset:convert 'hash-table ,obj :test #'equalp)))
+	`(let ((,obj-sym (if (hash-table-p ,obj)
+			     ,obj
+			     (fset:convert 'hash-table ,obj :test #'equalp))))
 	   ,@(reduce (lambda (body slot)
 		       (subst `(gethash ,(symbol-name slot) ,obj-sym)
 			      slot
 			      body))
 		     slots
 		     :initial-value body)
-	   (fset:convert 'map ,obj-sym)))))
+	   (if (or (not (hash-table-p ,obj))
+		   ,force-convert-to-fset?)
+	       (fset:convert 'map ,obj-sym)
+	       ,obj-sym)))))
 
 (defmethod fset:lookup ((collection hash-table) key)
   (gethash key collection :not-found))
@@ -798,3 +806,11 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 
 
 ;; (export-all :qmapper.std)
+
+
+;; (let ((lol1 (make-lol :slot-1 "CUSTOM ARVO"))
+;;       (lol2 (make-lol)))
+;;   (with-slots* (slot-1) lol1 :force-fset
+;; 	       (setf slot-1 lol2)
+;; 	       (with-slots* (slot-2) lol1
+;; 			    (setf slot-2 "Toimiikohan tää"))))

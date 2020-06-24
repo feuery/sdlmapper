@@ -17,10 +17,17 @@
   (visible t)
   (tiles '()))
 
+(defparameter +layer-tiles+ nil)
+
 (defun layer-width (*this*)
   (length (Layer-tiles *this*)))
 (defun layer-height (*this*)
-  (length (first (Layer-tiles *this*))))
+
+  (setf +layer-tiles+ (first (Layer-tiles *this*)))
+  (let ((result 
+	 (length (first (Layer-tiles *this*)))))
+
+    result))
 
 (defun-export! make-2d (w h tile-value)
   (let ((all-tiles

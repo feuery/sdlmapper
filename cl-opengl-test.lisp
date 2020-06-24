@@ -25,10 +25,17 @@
 
 (defmultimethod render-scene (list :editor :map) (renderer root)
   (let* ((chosen-map (root-chosenmap root)))
-    (when (>= chosen-map 0)
-      (let ((map (nth chosen-map (root-maps root))))
-	(when map
-	  (draw map (fset:map ("RENDERER" renderer))))))))
+    ;; Tää ajetaan sen jälkeen kun kynää on käytetty
+    (if (equalp chosen-map :not-found)
+	(format t "Why is chosen-map not found~%"))
+    ;(handler-case 
+	(when (>= chosen-map 0)
+	  (let ((map (nth chosen-map (root-maps root))))
+	    (when map
+	      (draw map (fset:map ("RENDERER" renderer))))))
+      ;; (ERROR (e)
+	;; 	(format t "error ~a~%" e)))
+	))
 
 (defmulti handle-drag #'equalp (root x y left-or-right)
   (list app-state editor-state))
@@ -40,7 +47,10 @@
 	       (tile-y (floor (/ y 50)))
 	       (tool-is-already-applied-here (get-in dragged-table (list tile-x tile-y))))
 	  (unless tool-is-already-applied-here
+	    (format t "Calling the tool ~%")
 	    (let ((result (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y (clone chosentile))))
+	      (format t "Called the tool~a~%" result)
+	      
 	      (if result
 		  (setf root result)))
 	    (setf (nth tile-y (nth tile-x dragged-table)) t))))))
@@ -123,7 +133,7 @@
 			  (if (equalp app-state :editor)
       
 			      (setf qmapper.root:*document*
-				(handle-drag qmapper.root:*document*
+				    (handle-drag qmapper.root:*document*
 					     x y 
 					     (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
 						   ((sdl2:mouse-state-p +right-mouse-button+) :right)

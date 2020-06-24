@@ -398,3 +398,4 @@
 (defun-export! drop-script-from-map (root map-id script-ns)
   (update-prop-in root (list "MAPS" map-id "SCRIPTS-TO-RUN") (partial #'fset:filter (lambda (script-id)
 										      (not (string= (script-id->ns root script-id) script-ns))))))
+
