@@ -125,7 +125,8 @@
   (let* ((searched-id (parse-integer (car params)))
 	 (index (find-map-index (root-maps *document*) #'map-id searched-id)))
     (when index
-      (setf (root-chosenmap *document*) index)
+      (setf *document* (with-slots* (chosenmap) *document*
+			 (setf chosenmap index)))
       (setf qmapper.app-state:editor-state :map))))
 
 (defmessage "LOAD-TILESET" (message client-socket params)

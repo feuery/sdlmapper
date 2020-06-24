@@ -1,6 +1,7 @@
 (defpackage :qmapper.map
   (:use :common-lisp
 	:qmapper.obj
+	:multimethods
 	:cl-arrows
 	:cl-fad
 	:qmapper.std
@@ -175,15 +176,15 @@
     (set-engine-doc (set-root-chosenmap! engine-doc map-id))))
 
 (defun-export! map-width (map)
-  (with-slots* (layers) map
+  (with-slots* (layers) map :read-only
     (layer-width (car layers))))
 
 (defun-export! map-height (map)
-  (with-slots* (layers) map
+  (with-slots* (layers) map :read-only
     (layer-height (car layers))))
 
 (defun get-tile-at (layer x y)
-  (with-slots* (qmapper.layer:tiles) layer
+  (with-slots* (qmapper.layer:tiles) layer :read-only
     (get-in qmapper.layer:tiles (list x y))))
   
 (defun fetch-tile-from-tileset (tileset x y)
@@ -191,89 +192,102 @@
     (let ((tiles (tileset-tiles tileset)))
       (get-in tiles (list x y)))))
 
-;; (defmethod draw ((map qmap) &key renderer dst (x 0) (y 0))
-;;   ;;(declare (optimize debug))
-;;   (if-let (*local-document* (if (equalp dst :ENGINE)
-;; 				*engine-document*
-;; 				qmapper.root:*document*))
-;;     (let* (;;(map (get-prop (root-maps root) (root-chosenmap root)))
-;; 	   (hitdata (map-hit-layer map))
-;; 	   (w (map-width map))
-;; 	   (h (map-height map))
-;; 	   (x-coords (mapcar #'dec (range w)))
-;; 	   (y-coords (mapcar #'dec (range h)))
-;; 	   (layers (->> (map-layers map)
-;; 			(remove-if-not #'layer-visible))) ;;old layer-list
-;; 	   ;;(layers (length layer-list))
-;; 	   ;;(l-coords (reverse (mapcar #'dec (range layers))))
-;; 	   (sprites (map-sprites map))
-;; 	   ;;(root-sprites (root-sprites *local-document*))
-;; 	   (animations (map-animatedsprites map))
-;; 	   ;;(root-animations (root-animatedsprites *local-document*))
-;; 	   ;; (final-l-coords (->> l-coords
-;; 	   ;; 			(remove-if-not (lambda (l-index)
-;; 	   ;; 					 (let ((layer (get-layer root map l-index)))
-;; 	   ;; 					   (layer-visible layer))))))
-;; 	   )
-      
-;;       (->> layers
-;; 	   (mapcar-with-index (lambda (layer index)
-;; 				;;(let ((layer (get-prop (root-layers root) (get-prop layer-list l))))
-;; 				(let ((coord-pairs (pairs x-coords y-coords)))
-;; 				  (dolist (pair coord-pairs)
-;; 				    ;;(format t "Drawing tile at ~a~%" pair)
-;; 				    (let ((x (car pair))
-;; 					  (y (cadr pair)))
-				      
-;; 				      (if-let (tile (get-tile-at layer x y))
-;; 					(progn (let* ((rotation (tile-rotation tile))
-;; 						      (sprite (tile-sprite tile))
-;; 						      (tile (if sprite
-;; 								tile
-;; 								(when-let (tile (fetch-tile-from-tileset (nth (tile-tileset tile) (root-tilesets *document*))
-;; 													 (tile-x tile)
-;; 													 (tile-y tile)))
-;; 								  tile)))
-;; 						      ;; (subtile (if (not (zerop index))
-;; 						      ;; 		    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))
-;; 						      ;; 		      (if (valid-gl-key? (tile-gl-key subtile))
-;; 						      ;; 			  subtile
-;; 						      ;; 			  (fetch-tile-from-tileset root
-;; 						      ;; 						   (tile-tileset subtile)
-;; 						      ;; 						   (tile-x subtile)
-;; 						      ;; 						   (tile-y subtile))))))
-;; 						      )
-						 
-;; 						 (when tile
-;; 						   (draw tile
-;; 							 :rotation rotation
-;; 							 :renderer renderer
-;; 							 :x (* x 50)
-;; 							 :y (* y 50)
-;; 							 :opacity (layer-opacity layer))))))))))))
-;;       (if (hit-tool-chosen?)
-;; 	  (let ((pairs (pairs x-coords y-coords)))
-;; 	    (dolist (pair pairs)
-;; 	      (let* ((x (car pair))
-;; 		     (y (cadr pair))
-;; 		     (hit-tile (get-prop-in hitdata (list x y))))
-		
-;; 		(draw-colored-rect (* x 50)
-;; 				   (* y 50)
-;; 				   (if hit-tile
-;; 				       0
-;; 				       255)
-;; 				   (if hit-tile
-;; 				       255 0)
-;; 				   0
-;; 				   127)))))
+;; Tää varmaan pitäis korjata
+(defmultimethod qmapper.obj:draw 'map (map args)
+  (let ((renderer (fset:lookup args "RENDERER"))
+	(dst (fset:lookup args "DST"))
+	(x (or (fset:lookup args "X") 0))
+	(y (or (fset:lookup args "Y") 0)))
 
-;;       (dolist (sprite sprites)
-;;       	(draw sprite :renderer renderer))
+    ;;((map qmap) &key renderer dst (x 0) (y 0))
+    ;;(declare (optimize debug))
+    (if-let (*local-document* (if (equalp dst :ENGINE)
+				  *engine-document*
+				  qmapper.root:*document*))
+      (let* (;;(map (get-prop (root-maps root) (root-chosenmap root)))
+	     (hitdata (map-hit-layer map))
+	     (w (map-width map))
+	     (h (map-height map))
+	     (x-coords (mapcar #'dec (range w)))
+	     (y-coords (mapcar #'dec (range h)))
+	     (layers (->> (map-layers map)
+			  (remove-if-not #'layer-visible))) ;;old layer-list
+	     ;;(layers (length layer-list))
+	     ;;(l-coords (reverse (mapcar #'dec (range layers))))
+	     (sprites (map-sprites map))
+	     ;;(root-sprites (root-sprites *local-document*))
+	     (animations (map-animatedsprites map))
+	     ;;(root-animations (root-animatedsprites *local-document*))
+	     ;; (final-l-coords (->> l-coords
+	     ;; 			(remove-if-not (lambda (l-index)
+	     ;; 					 (let ((layer (get-layer root map l-index)))
+	     ;; 					   (layer-visible layer))))))
+	     )
+	
+	(->> layers
+	     (mapcar-with-index (lambda (layer index)
+				  ;;(let ((layer (get-prop (root-layers root) (get-prop layer-list l))))
+				  (let ((coord-pairs (pairs x-coords y-coords)))
+				    (dolist (pair coord-pairs)
+				      ;;(format t "Drawing tile at ~a~%" pair)
+				      (let ((x (car pair))
+					    (y (cadr pair)))
+					
+					(if-let (tile (get-tile-at layer x y))
+					  (progn
+					    ;;					    (format t "Tää tile: ~a~%" tile)
+					    (let* ((rotation (tile-rotation tile))
+						   (sprite (tile-sprite tile))
+						   ;; (_ (progn
+						   ;; 	(break)
+						   ;; 	(format t "AAA~%")))
+						   (tile (if sprite
+							     tile
+							     (if (tile-tileset tile)
+								 (when-let (tile (fetch-tile-from-tileset (nth (tile-tileset tile) (root-tilesets *document*))
+													  (tile-x tile)
+													  (tile-y tile)))
+								   tile))))
+						   ;; (subtile (if (not (zerop index))
+						   ;; 		    (let ((subtile (get-tile-at map (nth (dec index) final-l-coords) x y)))
+						   ;; 		      (if (valid-gl-key? (tile-gl-key subtile))
+						   ;; 			  subtile
+						   ;; 			  (fetch-tile-from-tileset root
+						   ;; 						   (tile-tileset subtile)
+						   ;; 						   (tile-x subtile)
+						   ;; 						   (tile-y subtile))))))
+						   )
+					      
+					      (when tile
+						(draw tile (fset:map 
+							    ("ROTATION" rotation)
+							    ("RENDERER" renderer)
+							    ("X" (* x 50))
+							    ("Y" (* y 50))
+							    ("OPACITY" (layer-opacity layer))))))))))))))
+	(if (hit-tool-chosen?)
+	    (let ((pairs (pairs x-coords y-coords)))
+	      (dolist (pair pairs)
+		(let* ((x (car pair))
+		       (y (cadr pair))
+		       (hit-tile (get-prop-in hitdata (list x y))))
+		  
+		  (draw-colored-rect (* x 50)
+				     (* y 50)
+				     (if hit-tile
+					 0
+					 255)
+				     (if hit-tile
+					 255 0)
+				     0
+				     127)))))
+
+	(dolist (sprite sprites)
+	  (draw sprite :renderer renderer))
       	
 
-;;       (dolist (animation animations)
-;; 	(draw animation :renderer renderer)))))
+	(dolist (animation animations)
+	  (draw animation :renderer renderer))))))
 
 (defun-export! select-map-layer (root map-id layer-id)
   ;;(clear-lisp-dq :MAP)
