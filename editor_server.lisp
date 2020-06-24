@@ -88,7 +88,7 @@
 
 (defmessage "LIST-TILESETS" (message client-socket params)
   (format (socket-stream client-socket)
-	  (with-slots* (tilesets) *document*
+	  (with-slots* (tilesets) *document* :read-only
 		       (->> (zipmap 
 			     (mapcar #'tileset-id tilesets)
 			     (mapcar #'tileset-name tilesets))
@@ -115,10 +115,11 @@
 	 (index (->> (range (length (root-tilesets *document*)))
 		     (mapcar #'dec)
 		     (remove-if-not (lambda (index)
-				      (with-slots* (qmapper.tileset:id) (nth index (root-tilesets *document*))
+				      (with-slots* (qmapper.tileset:id) (nth index (root-tilesets *document*)) :read-only
 						   (equalp searched-id qmapper.tileset:id)))))))
     (when index
-      (setf (root-chosentileset *document*) (car index))
+      (setf *document* (with-slots* (chosentileset) *document*
+				    (setf chosentileset (car index))))
       (setf qmapper.app-state:editor-state :tileset))))
 
 (defmessage "SELECT-MAP" (message client-socket params)
