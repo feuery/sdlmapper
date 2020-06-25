@@ -88,7 +88,7 @@
 		   (let ((layer-obj (nth layer layers)))
 		     (setf (nth layer layers)
 			   (with-slots* (qmapper.layer:tiles) layer-obj
-					(setf qmapper.layer:tiles
+					(setf (nth x qmapper.layer:tiles)
 					      (let ((inner-list (nth x tiles)))
 						(format t "inner-list: ~a~%and tile~a~%" inner-list tile)
 						(setf (nth y inner-list) tile)
