@@ -155,7 +155,8 @@
 
 (defmessage "SELECT-TOOL" (message client-socket params)
   (let ((new-tool (read-from-string (car params))))
-    (setf (root-chosentool *document*) new-tool)))
+    (setf *document* (with-slots* (chosentool) *document*
+		       (setf chosentool new-tool))))) 
 
 (defmessage "LIST-LAYERS" (message client-socket params)
   (format t "params in list-layers: ~a~%" params)
