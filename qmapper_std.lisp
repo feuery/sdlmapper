@@ -278,6 +278,20 @@
 	(get-in (nth key list) ks)
 	(nth key list))))
 
+(defun-export! set-in (list ks v)
+  (let ((key (car ks))
+	(ks (cdr ks)))
+    (if ks
+	(setf (nth key list)
+	      (set-in (nth key list) ks v))
+	(setf (nth key list) v))
+    list))
+
+;; (set-in (list (list (range 10) (range 10))
+;; 	      (list (range 10) (range 10)))
+;; 	'(1 1 2)
+;; 	:LOL)
+
 (defun-export! get-prop  (obj-alist key)
   (handler-case 
       (let ((obj-alist (if (or (listp obj-alist)

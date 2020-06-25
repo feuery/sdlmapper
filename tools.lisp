@@ -27,15 +27,19 @@
 	(setf (nth chosenmap maps) result)))))
 
 (deftool :rotation (root x y tile-x tile-y selected-tile)
-  (handler-case 
-      (let* ((map (root-get-chosen-map root))
-	     (last-layer (car (last (map-layers map))))
-	     (really-selected-tile (-> (layer-tiles last-layer)
-				       (get-in (list tile-x tile-y)))))
-	(with-slots* (rotation) really-selected-tile
-	  (setf rotation (mod (inc rotation) 4))))
-    (error (c)
-      (format t "ERROR: ~a~%" c))))
+  (with-slots* (qmapper.root:maps qmapper.root:chosenmap qmapper.root:chosenlayer) root 
+    (let* ((map (nth chosenmap maps))
+	   ;; my god this with-slots* hodge-podge could use some clojurification in the form of update-in
+	   (map (with-slots* (layers) map
+		  (let ((layer (nth chosenlayer layers))
+			(local-layers layers))
+		    (setf (nth chosenlayer local-layers) (with-slots* (tiles) layer
+						     (let ((tile (get-in tiles (list tile-x tile-y))))
+						       (setf tiles (set-in tiles (list tile-x tile-y)
+									   (with-slots* (rotation) tile
+									     (setf rotation (mod (inc rotation) 4))))))))
+		    (setf layers local-layers)))))
+      (setf (nth chosenmap maps) map))))
 
 (deftool :sprite-mover (root x y tile-x tile-y selected-tile)
   (let* ((map (root-get-chosen-map root))

@@ -47,9 +47,8 @@
 	       (tile-y (floor (/ y 50)))
 	       (tool-is-already-applied-here (get-in dragged-table (list tile-x tile-y))))
 	  (unless tool-is-already-applied-here
-	    (format t "Calling the tool ~%")
+
 	    (let ((result (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y (clone chosentile))))
-	      (format t "Called the tool~a~%" result)
 	      
 	      (if result
 		  (setf root result)))
