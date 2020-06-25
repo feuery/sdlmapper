@@ -278,14 +278,17 @@
 (defmessage "LOAD-SPRITE" (message client-socket params)
   (destructuring-bind (path sprite-name) params
     (schedule-once (lambda ()
-		     (let ((chosen-map (root-get-chosen-map *document*)))
-		       (setf (root-get-chosen-map *document*)
+		     (setf *document*
+		       (with-slots* (qmapper.root:maps qmapper.root:chosenmap qmapper.root:chosenlayer) *document*
+			 (let* ((chosen-map (nth chosenmap maps)))
+			   (setf chosen-map
 			     (with-slots* (sprites) chosen-map
 					  (let ((sprite (-> (make-sprite  :name sprite-name)
 							    (init-sprite :sprite-path path :renderer *renderer*))))
 					    (push
 					     sprite
-					     sprites)))))))
+					     sprites))))
+			 (setf (nth chosenmap maps) chosen-map))))))
     (format (socket-stream client-socket) "Scheduled sprite loading~%")))
 
 (defmessage "LOAD-ANIMATION" (message client-socket params)

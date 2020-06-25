@@ -284,11 +284,11 @@
 				     127)))))
 
 	(dolist (sprite sprites)
-	  (draw sprite :renderer renderer))
+	  (draw sprite (fset:map ("RENDERER" renderer))))
       	
 
 	(dolist (animation animations)
-	  (draw animation :renderer renderer))))))
+	  (draw animation (fset:map ("RENDERER" renderer))))))))
 
 (defun-export! select-map-layer (root map-id layer-id)
   ;;(clear-lisp-dq :MAP)
