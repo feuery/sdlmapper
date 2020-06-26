@@ -30,20 +30,25 @@
 (defun animatedsprite-maxFrames (*this*)
   (length (animatedsprite-sprites *this*)))
 
-(defun animatedsprite-advanceFrame! (animation )
-  (let ((maxframes (animatedsprite-maxframes animation)))
-    (with-slots* (currentframeid) animation
-      (setf currentframeid (mod (inc currentframeid) maxframes)))))
-
 (defmultimethod draw 'animatedsprite (animation args)
-  (let ((renderer (fset:lookup args "RENDERER")))
-    (with-slots* (sprites x y currentframeid angle) (-> animation
-							animatedsprite-advanceframeifneeded!)
-		 (setf (nth currentframeid sprites)
-		       (with-slots* (position) (nth currentframeid sprites)
-				    (setf position (list x y))
-				    (setf (obj-sprite-angle (nth currentframeid sprites)) angle)
-				    (draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))
+  ;; TODO this messing around with sprite index does not in fact belong in the drawing function
+  (setf *document*
+	(with-slots* (qmapper.root:maps qmapper.root:chosenmap qmapper.root:chosenlayer) *document*
+	  (let ((the-maps maps))
+	    (setf (nth chosenmap the-maps)
+		  (let* ((map (nth chosenmap maps))
+			 (renderer (fset:lookup args "RENDERER"))
+			 (animation-index (position animation (fset:lookup map "ANIMATEDSPRITES") :test #'equalp)))
+		    (with-slots* (animatedsprites) map
+		      (setf (nth animation-index animatedsprites)
+			    (with-slots* (sprites x y currentframeid angle ) (-> animation
+										 animatedsprite-advanceframeifneeded!)
+				(setf (nth currentframeid sprites)
+				      (with-slots* (position) (nth currentframeid sprites)
+					(setf position (list x y))
+					(setf (gethash "ANGLE" (nth currentframeid sprites))  angle)
+					(draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))))
+	    (setf qmapper.root:maps the-maps)))))
 
 (defmultimethod set-pos 'animatedsprite (animation new-x new-y)
   (with-slots* (x y) animation
@@ -59,11 +64,16 @@
     (setf angle new-angle)))
 
 (defun animatedsprite-advanceFrameIfNeeded! (animation)
-  (with-slots* (animationPlaying lastUpdated msPerFrame) (animatedsprite-advanceframe! animation)
-    (when (and animationPlaying		     
-	     (> (get-ms-time) (+ lastUpdated
-				 msPerFrame)))
-      (setf lastUpdated (get-ms-time)))))
+  (with-slots* (animationPlaying sprites currentframeid lastUpdated msPerFrame) animation
+    (let ((maxframes (length sprites)))
+      (when (and animationPlaying		     
+		 (> (get-ms-time) (+ lastUpdated
+				      msPerFrame)))
+
+
+	(setf currentframeid (mod (inc currentframeid) maxframes))
+	(setf lastUpdated (get-ms-time))))))
+      
 
 (defun-export! load-tilesetless-texture-splitted (base-surface surface-dimensions &key renderer (tile-width 50) (tile-height 50))
   (assert renderer)
