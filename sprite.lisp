@@ -26,7 +26,7 @@
 (defmulti set-pos #'equalp (sprite-lookalike x y)
   (fset:lookup sprite-lookalike "TYPE"))
 
-(defmulti get-pos #'equalp (sprite-lookalike x y)
+(defmulti get-pos #'equalp (sprite-lookalike)
   (fset:lookup sprite-lookalike "TYPE"))
 
 (defmulti set-angle #'equalp (sprite-lookalike angle)
@@ -58,7 +58,7 @@
     (setf angle new-angle)))
 		  
 (defmultimethod get-pos 'sprite (sprite &key)
-  (with-slots* (x y) sprite
+  (with-slots* (x y) sprite :read-only
     (list x y)))
 
 (defun init-sprite (sprite &key sprite-path renderer)

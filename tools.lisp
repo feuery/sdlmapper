@@ -42,9 +42,10 @@
       (setf (nth chosenmap maps) map))))
 
 (deftool :sprite-mover (root x y tile-x tile-y selected-tile)
-  (let* ((map (root-get-chosen-map root))
-	 (nearest (map-findnearest map x y)))
-    (set-pos nearest x y)))
+  (with-slots* (qmapper.root:maps qmapper.root:chosenmap) root 
+    (let* ((map (nth qmapper.root:chosenmap qmapper.root:maps))
+	   (nearest (map-findnearest map x y)))
+      (set-pos nearest x y))))
 
 (defun angle (x1 y1 x2 y2)
   (let ((a (- x1 x2))

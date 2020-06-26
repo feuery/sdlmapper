@@ -56,7 +56,7 @@
 	  y new-y)))
 
 (defmultimethod get-pos 'animatedsprite (animation)
-   (with-slots* (x y) animation
+   (with-slots* (x y) animation :read-only
      (list x y)))
 
 (defmultimethod set-angle 'animatedsprite (animation new-angle)

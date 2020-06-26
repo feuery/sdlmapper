@@ -23,11 +23,13 @@
 (defun-export! find-nearest  (x y lst)
   (->> lst
        (mapcar (lambda (sprite)
-		 (destructuring-bind (sprites-x sprites-y) (get-pos sprite)
-		   
-		   (list (distance sprites-x sprites-y
-				   x y)
-			 sprite))))
+		 (let ((position (get-pos sprite)))
+		   (when position
+		     (destructuring-bind (sprites-x sprites-y) position
+		       
+		       (list (distance sprites-x sprites-y
+				       x y)
+			     sprite))))))
        (sort-by #'first)
        (first)
        (last)))

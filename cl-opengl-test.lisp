@@ -48,7 +48,7 @@
 	       (tool-is-already-applied-here (get-in dragged-table (list tile-x tile-y))))
 	  (unless tool-is-already-applied-here
 
-	    (let ((result (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y (clone chosentile))))
+	    (let ((result (funcall (fset:lookup qmapper.tools:*tools* chosentool) root x y tile-x tile-y chosentile)))
 	      
 	      (if result
 		  (setf root result)))
