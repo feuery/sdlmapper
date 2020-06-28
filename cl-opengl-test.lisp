@@ -52,7 +52,11 @@
 	      
 	      (if result
 		  (setf root result)))
-	    (setf (nth tile-y (nth tile-x dragged-table)) t))))))
+	    (if (and tile-y
+		     tile-x
+		     dragged-table
+		     (nth tile-x dragged-table))
+		(setf (nth tile-y (nth tile-x dragged-table)) t)))))))
 
 (defmultimethod handle-drag (list :editor :tileset) (root x y left-or-right)
   (if (equalp left-or-right :left)
@@ -127,27 +131,24 @@
 
     (:mousemotion (:x x :y y)
 		  (handler-case 
-		      (if (or (sdl2:mouse-state-p +left-mouse-button+)
-		      	      (sdl2:mouse-state-p +right-mouse-button+))
-			  (if (equalp app-state :editor)
-      
-			      (setf qmapper.root:*document*
-				    (handle-drag qmapper.root:*document*
+		  (if (or (sdl2:mouse-state-p +left-mouse-button+)
+			  (sdl2:mouse-state-p +right-mouse-button+))
+		      (if (equalp app-state :editor)
+			  
+			  (setf qmapper.root:*document*
+				(handle-drag qmapper.root:*document*
 					     x y 
 					     (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
 						   ((sdl2:mouse-state-p +right-mouse-button+) :right)
 						   (t nil))))
-			      (setf qmapper.root:*engine-document*
+			  (setf qmapper.root:*engine-document*
 				(handle-drag qmapper.root:*engine-document*
 					     x y 
 					     (cond ((sdl2:mouse-state-p +left-mouse-button+) :left)
 						   ((sdl2:mouse-state-p +right-mouse-button+) :right)
 						   (t nil))))))
-		    (error (c)
-		      (format t "tool-error: ~a~%" c)
-		      ;; (format t "bt: ~a~%" (sb-debug:list-backtrace))
-		      )))		      
-		      
+		  (error (c)
+		    (format t "tool-error: ~a~%" c))))
     (:idle ()
 	   (idle renderer *draw-queue*))
 

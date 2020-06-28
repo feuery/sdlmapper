@@ -8,7 +8,7 @@
 	:qmapper.tileset
 	:qmapper.root
 	:qmapper.obj)
-  (:export :init-sprite :set-angle :qsprite :sprite-x :sprite-y :set-pos :get-pos :sprite-angle))
+  (:export :update-map-sprite :init-sprite :set-angle :qsprite :sprite-x :sprite-y :set-pos :get-pos :sprite-angle))
 
 (in-package :qmapper.sprite)
 
@@ -37,7 +37,7 @@
   (x 0) ;; validator #'validate-x)
    (y 0) ;; validator #'validate-y)
    (angle 0) ;; validator 0.0)
-   
+  (id (random 99999))
    (gravity-vector #[0 1] ;; (lambda (g)
 		   ;;   (and (fset:seq? g)
 		   ;; 	    (every #'numberp (fset:convert 'list g))))
@@ -74,5 +74,18 @@
 		 (setf obj-sprite 
 		       (with-slots* (position) obj-sprite
 				    (setf position (list x y)
-					  (gethash 'angle obj-sprite) angle)
+					  (gethash "ANGLE" obj-sprite) angle)
 				    (draw obj-sprite (fset:map ("RENDERER" renderer))))))))
+
+(defmulti update-map-sprite #'equalp (map new-sprite)
+  (fset:lookup new-sprite "TYPE"))
+
+(defmultimethod update-map-sprite 'sprite (map new-sprite)
+  (with-slots* (sprites) map
+    (setf sprites (mapcar (lambda (a-sprite)
+			    (let ((id (fset:lookup a-sprite "ID")))
+			      (if (equalp id (fset:lookup new-sprite "ID"))
+				  new-sprite
+				  a-sprite)))
+			  sprites))))
+

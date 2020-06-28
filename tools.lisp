@@ -57,14 +57,14 @@
 (defun rad->deg (rad)
   (* (/ rad pi) 180))
 
-
 (deftool :sprite-rotater (root x y tile-x tile-y selected-tile)
-  (let* ((map (root-get-chosen-map root))
-	 (nearest (map-findnearest map x y))
-	 (position (get-pos nearest)))
-    (set-angle nearest (rad->deg (angle 
-				  (car position) (cadr position)
-				  x y)))))
-
-
-	       
+  (with-slots* (qmapper.root:maps qmapper.root:chosenmap) root 
+    (let* ((map (nth qmapper.root:chosenmap qmapper.root:maps))
+	   (nearest (map-findnearest map x y))
+	   (position (get-pos nearest))
+	   (angle (rad->deg (angle 
+			     (car position) (cadr position)
+			     x y)))
+	   (new-sprite (set-angle nearest angle )))
+      (setf (nth chosenmap maps)
+	    (update-map-sprite map new-sprite)))))

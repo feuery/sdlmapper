@@ -15,6 +15,7 @@
 (defclass* animatedsprite
     (name "")
   (currentFrameId 0 )
+  (id (random 99999))
   (msPerFrame 25)
   (animationPlaying t)
   (visible t)
@@ -60,7 +61,7 @@
      (list x y)))
 
 (defmultimethod set-angle 'animatedsprite (animation new-angle)
-  (with-slots* (angle)
+  (with-slots* (angle) animation
     (setf angle new-angle)))
 
 (defun animatedsprite-advanceFrameIfNeeded! (animation)
@@ -113,3 +114,12 @@
       (setf sprites loaded-sprites))))
 
 
+
+(defmultimethod qmapper.sprite:update-map-sprite 'animatedsprite (map new-sprite)
+  (with-slots* (animatedSprites) map
+    (setf animatedsprites (mapcar (lambda (a-sprite)
+				    (let ((id (fset:lookup a-sprite "ID")))
+				      (if (equalp id (fset:lookup new-sprite "ID"))
+					  new-sprite
+					  a-sprite)))
+				  animatedsprites))))
