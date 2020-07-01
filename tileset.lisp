@@ -94,7 +94,7 @@
 	(setf width loaded-width)
 	(setf height loaded-height)))))
 
-(defmultimethod draw 'tileset (tset args)
+(defmultimethod draw "tileset" (tset args)
   (let* ((renderer (fset:lookup args "RENDERER"))
 	 (x (or (fset:lookup args "X") 0))
 	 (y (or (fset:lookup args "Y") 0)))

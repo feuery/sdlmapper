@@ -726,13 +726,21 @@ by setting this var to nil and killing every process on the way. TODO make a bet
   (* 1000
      (get-universal-time)))
 
-(defmacro defclass* (class-name &rest slot-val-pairs)
-  (unless (car slot-val-pairs)
+(defun-export! compose (&rest fns)
+  (destructuring-bind (fn1 . rest) (reverse fns)
+    #'(lambda (&rest args)
+        (reduce #'(lambda (v f) (funcall f v)) 
+                rest
+                :initial-value (apply fn1 args)))))
+
+(defmacro defclass* (class-name &rest slot-val-tags-triplets)
+  (unless (car slot-val-tags-triplets)
     (format t "First slot is nil. Have you converted from the clos defclass perhaps?~%")
     (error 'error ))
   
   (let* ((ctr-name (create-symbol (str "make-" (symbol-name class-name))))
-	 (slots (mapcar #'first slot-val-pairs))
+	 (slots (mapcar #'first slot-val-tags-triplets))
+	 (slot-val-pairs (mapcar (lambda (l) (take l 2)) slot-val-tags-triplets))
 	 (ctr-params `(&key ,@slot-val-pairs))
 	 (getters (->> slots
 		       (mapcar (lambda (slot)
@@ -743,12 +751,20 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 				   `(progn
 				      (defun ,getter-name (obj)
 					(fset:lookup obj (symbol-name ',slot)))
-				      (export ',getter-name))))))))
+				      (export ',getter-name)))))))
+	 (non-serializables (->> slot-val-tags-triplets
+				 (remove-if-not (lambda (tripl)
+						  (let ((tags (third tripl)))
+						    (when tags
+						      (position 'nonserializable tags :test #'string=)))))
+				 (mapcar (compose #'prin1-to-string #'first))
+				 (cons 'list))))
     `(progn
        ,@getters
        (defun-export! ,ctr-name ,ctr-params
 	 (fset:map
-	  ("TYPE" ',class-name)
+	  ("TYPE" ,(prin1-to-string class-name))
+	  ("NONSERIALIZABLES" ,non-serializables)
 	  ,@(mapcar (lambda (slot-val)
 		      (list (prin1-to-string slot-val) slot-val))
 		    slots))))))
@@ -794,6 +810,20 @@ by setting this var to nil and killing every process on the way. TODO make a bet
   (gethash key collection :not-found))
 
 (export 'with-slots*)
+
+(defun-export! clean-hashmaps (m)
+  "Cleans mutable hashmaps out of a hashmap/fset:map hybrid structure. Handles lists correctly."
+  (cond ((hash-table-p m)
+	 (clean-hashmaps (convert 'map m)))
+	((listp m)
+	 (mapcar #'clean-hashmaps m))
+	((fset:map? m)
+	 (fset:image (lambda (k v)
+		       (values k (clean-hashmaps v)))
+		     m))
+	(t m)))
+
+
 
 ;; (qloop (lambda ()
 ;; 	 (when (key-down? "KEY-DOWN")

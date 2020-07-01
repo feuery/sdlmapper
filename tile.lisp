@@ -15,7 +15,7 @@
   (rotation 0)
   (sprite nil))
 
-(defmultimethod draw 'tile (tile-obj args)
+(defmultimethod draw "tile" (tile-obj args)
   (let* ((renderer (fset:lookup args "RENDERER"))
 	 (x (fset:lookup args "X"))
 	 (y (fset:lookup args "Y"))

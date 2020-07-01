@@ -399,3 +399,42 @@
   (update-prop-in root (list "MAPS" map-id "SCRIPTS-TO-RUN") (partial #'fset:filter (lambda (script-id)
 										      (not (string= (script-id->ns root script-id) script-ns))))))
 
+(defun filter-unserializables (m)
+  (cond ((hash-table-p m)
+	 (filter-unserializables (fset:convert 'fset:map m)))
+	((listp m)
+	 (fset:convert 'fset:seq (mapcar #'filter-unserializables m)))
+	((fset:map? m)
+	 (let* ((m (fset:image (lambda (k v)
+		       (values k (filter-unserializables v)))
+			       m))
+		(nonserializables (fset:convert 'list (fset:lookup m "NONSERIALIZABLES"))))
+	   (reduce (lambda (m key)
+		     (fset:less m key))
+		   nonserializables
+		   :initial-value m)))
+	(t m)))
+
+(defun filter-seqs (m)
+  (cond ((fset:seq? m)
+	 (filter-seqs (fset:convert 'list m)))
+	((listp m)
+	 (mapcar #'filter-seqs m))
+	((fset:map? m)
+	 (fset:image (lambda (k v)
+		       (values k (filter-seqs v)))
+		     m))
+	(t m)))
+
+;;(filter-seqs *document*)
+
+;;(defun-export! save-doc! (doc path)
+  ;; ensin puhdistetaan clean-hashmaps:illa
+  ;; sitten iteroidaan läpi samalla rungolla kuin em. funktiossa, ja jokaiselta oliolta kysytään "NONSERIALIZABLE-FIELDS", eli lista avaimia jotka sitten dissocataan
+  ;; kun tää on tehty, voidaan formatilla lyödä koko rakenne $path.lispiin
+
+
+;; (setf *document* (eval (read-from-string (prin1-to-string (filter-unserializables *document*)))))
+
+;; (equalp (filter-seqs (eval (read-from-string (prin1-to-string (filter-unserializables *document*)))))
+;; 	(filter-seqs (filter-unserializables *document*)))

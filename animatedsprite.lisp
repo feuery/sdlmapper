@@ -31,7 +31,7 @@
 (defun animatedsprite-maxFrames (*this*)
   (length (animatedsprite-sprites *this*)))
 
-(defmultimethod draw 'animatedsprite (animation args)
+(defmultimethod draw "animatedsprite" (animation args)
   ;; TODO this messing around with sprite index does not in fact belong in the drawing function
   (setf *document*
 	(with-slots* (qmapper.root:maps qmapper.root:chosenmap qmapper.root:chosenlayer) *document*
@@ -51,16 +51,16 @@
 					(draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))))
 	    (setf qmapper.root:maps the-maps)))))
 
-(defmultimethod set-pos 'animatedsprite (animation new-x new-y)
+(defmultimethod set-pos "animatedsprite" (animation new-x new-y)
   (with-slots* (x y) animation
     (setf x new-x
 	  y new-y)))
 
-(defmultimethod get-pos 'animatedsprite (animation)
+(defmultimethod get-pos "animatedsprite" (animation)
    (with-slots* (x y) animation :read-only
      (list x y)))
 
-(defmultimethod set-angle 'animatedsprite (animation new-angle)
+(defmultimethod set-angle "animatedsprite" (animation new-angle)
   (with-slots* (angle) animation
     (setf angle new-angle)))
 
@@ -115,7 +115,7 @@
 
 
 
-(defmultimethod qmapper.sprite:update-map-sprite 'animatedsprite (map new-sprite)
+(defmultimethod qmapper.sprite:update-map-sprite "animatedsprite" (map new-sprite)
   (with-slots* (animatedSprites) map
     (setf animatedsprites (mapcar (lambda (a-sprite)
 				    (let ((id (fset:lookup a-sprite "ID")))

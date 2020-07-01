@@ -48,16 +48,16 @@
    ;;(loadingDone :initarg :loadingDone :accessor sprite-loadingDone :initform nil)
    (obj-sprite :not-loaded-correctly))
 
-(defmultimethod set-pos 'sprite (sprite new-x new-y &key)
+(defmultimethod set-pos "sprite" (sprite new-x new-y &key)
   (with-slots* (x y) sprite
     (setf x new-x
 	  y new-y)))
 
-(defmultimethod set-angle 'sprite (sprite new-angle &key)
+(defmultimethod set-angle "sprite" (sprite new-angle &key)
   (with-slots* (angle) sprite
     (setf angle new-angle)))
 		  
-(defmultimethod get-pos 'sprite (sprite &key)
+(defmultimethod get-pos "sprite" (sprite &key)
   (with-slots* (x y) sprite :read-only
     (list x y)))
 
@@ -68,7 +68,7 @@
 	(setf obj-sprite (create-sprite :renderer renderer :texture-path sprite-path)))
       sprite))
 
-(defmultimethod draw 'sprite (sprite args)
+(defmultimethod draw "sprite" (sprite args)
   (let ((renderer (fset:lookup args "RENDERER")))
     (with-slots* (x y angle obj-sprite) sprite
 		 (setf obj-sprite 
@@ -80,7 +80,7 @@
 (defmulti update-map-sprite #'equalp (map new-sprite)
   (fset:lookup new-sprite "TYPE"))
 
-(defmultimethod update-map-sprite 'sprite (map new-sprite)
+(defmultimethod update-map-sprite "sprite" (map new-sprite)
   (with-slots* (sprites) map
     (setf sprites (mapcar (lambda (a-sprite)
 			    (let ((id (fset:lookup a-sprite "ID")))

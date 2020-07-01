@@ -19,9 +19,9 @@
    ;; 255...0, opaque...translucent
   (opacity 255)
    ;; we have to keep hold of this for subobject purposes
-   (surface nil)
+  (surface nil (nonserializable))
    ;; "HW-accelerated" version of the above
-  (texture nil))
+  (texture nil (nonserializable)))
 
 (defun init-obj (obj &key sdl-surface renderer)
   (with-slots* (position size angle color opacity surface texture) obj
@@ -39,7 +39,7 @@
   (fset:lookup drawable "TYPE"))
 
 
-(defmultimethod draw 'obj (obj args)
+(defmultimethod draw "obj" (obj args)
   (let ((renderer (fset:lookup args "RENDERER")))
     (with-slots* (position texture size opacity angle) obj
 		 ;; (format t "Drawing obj sprite at ~a~%" position)

@@ -195,37 +195,25 @@
     (let ((tiles (tileset-tiles tileset)))
       (get-in tiles (list x y)))))
 
-;; Tää varmaan pitäis korjata
-(defmultimethod qmapper.obj:draw 'map (map args)
+(defmultimethod qmapper.obj:draw "map" (map args)
   (let ((renderer (fset:lookup args "RENDERER"))
 	(dst (fset:lookup args "DST"))
 	(x (or (fset:lookup args "X") 0))
 	(y (or (fset:lookup args "Y") 0)))
 
-    ;;((map qmap) &key renderer dst (x 0) (y 0))
     ;;(declare (optimize debug))
     (if-let (*local-document* (if (equalp dst :ENGINE)
 				  *engine-document*
 				  qmapper.root:*document*))
-      (let* (;;(map (get-prop (root-maps root) (root-chosenmap root)))
-	     (hitdata (map-hit-layer map))
+      (let* ((hitdata (map-hit-layer map))
 	     (w (map-width map))
 	     (h (map-height map))
 	     (x-coords (mapcar #'dec (range w)))
 	     (y-coords (mapcar #'dec (range h)))
 	     (layers (->> (map-layers map)
 			  (remove-if-not #'layer-visible))) ;;old layer-list
-	     ;;(layers (length layer-list))
-	     ;;(l-coords (reverse (mapcar #'dec (range layers))))
 	     (sprites (map-sprites map))
-	     ;;(root-sprites (root-sprites *local-document*))
-	     (animations (map-animatedsprites map))
-	     ;;(root-animations (root-animatedsprites *local-document*))
-	     ;; (final-l-coords (->> l-coords
-	     ;; 			(remove-if-not (lambda (l-index)
-	     ;; 					 (let ((layer (get-layer root map l-index)))
-	     ;; 					   (layer-visible layer))))))
-	     )
+	     (animations (map-animatedsprites map)))
 	
 	(->> layers
 	     (mapcar-with-index (lambda (layer index)
@@ -238,12 +226,8 @@
 					
 					(if-let (tile (get-tile-at layer x y))
 					  (progn
-					    ;;					    (format t "Tää tile: ~a~%" tile)
 					    (let* ((rotation (tile-rotation tile))
 						   (sprite (tile-sprite tile))
-						   ;; (_ (progn
-						   ;; 	(break)
-						   ;; 	(format t "AAA~%")))
 						   (tile (if sprite
 							     tile
 							     (if (tile-tileset tile)
