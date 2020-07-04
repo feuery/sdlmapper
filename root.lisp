@@ -428,13 +428,61 @@
 
 ;;(filter-seqs *document*)
 
-;;(defun-export! save-doc! (doc path)
-  ;; ensin puhdistetaan clean-hashmaps:illa
-  ;; sitten iteroidaan läpi samalla rungolla kuin em. funktiossa, ja jokaiselta oliolta kysytään "NONSERIALIZABLE-FIELDS", eli lista avaimia jotka sitten dissocataan
-  ;; kun tää on tehty, voidaan formatilla lyödä koko rakenne $path.lispiin
-
-
 ;; (setf *document* (eval (read-from-string (prin1-to-string (filter-unserializables *document*)))))
 
 ;; (equalp (filter-seqs (eval (read-from-string (prin1-to-string (filter-unserializables *document*)))))
 ;; 	(filter-seqs (filter-unserializables *document*)))
+
+
+(defun find-sdl-objs (m)
+  (cond ((hash-table-p m)
+	 (find-sdl-objs (fset:convert 'fset:map m)))
+	((fset:seq? m)
+	 (find-sdl-objs (fset:convert 'list m)))
+	((listp m)
+
+	 (rutil:mapcat #'find-sdl-objs m))
+	((and (fset:map? m)
+	      (string= (fset:lookup m "TYPE") "OBJ"))
+	 (list m));)
+	((fset:map? m)
+	 (rutil:mapcat #'find-sdl-objs (vals m)))))
+
+;; (find-sdl-objs *document*)  
+
+;; TODO tää työntää ton saatanan kansiorakenteen tape archiveen, eikä sitä saa litistettyä. Se pitää ottaa jotenkin huomioon tätä ladatessa.
+(defun-export! save-doc! (doc path)
+  ;; ensin puhdistetaan clean-hashmaps:illa
+  ;; sitten iteroidaan läpi samalla rungolla kuin em. funktiossa, ja jokaiselta oliolta kysytään "NONSERIALIZABLE-FIELDS", eli lista avaimia jotka sitten dissocataan
+  ;; kun tää on tehty, voidaan formatilla lyödä koko rakenne $path.lispiin
+
+  (let ((output-dir-name (pathname (str "/tmp/sdlmapper-" (random 999999) "/")))
+	(objs (find-sdl-objs doc)))
+   (ensure-directories-exist output-dir-name)
+   (format t "Temp directory ~a exists~%" output-dir-name)
+
+   (dolist (obj objs)
+      (let* ((id (qmapper.obj:obj-id obj))
+	     (filename (pathname (str output-dir-name "/" id ".png"))))
+	(sdl2-image:save-png (qmapper.obj:obj-surface obj)
+			     (str filename))))
+    ;; TODO spitataan docci .lispiin output-diriin ja sen jälkeen katotaan shellillä miltä näyttää
+    (spit (filter-unserializables doc) (pathname (str output-dir-name "/doc.lisp")))
+    (archive:with-open-archive (archive path :direction :output :if-exists :supersede :if-does-not-exist :create)
+      (dolist (f (cl-fad:list-directory output-dir-name)
+		 (archive:finalize-archive archive))
+	(let ((entry (archive:create-entry-from-pathname archive f)))
+	  (archive:write-entry-to-archive archive entry))))
+
+    (cl-fad:delete-directory-and-files output-dir-name)
+    (format t "Wrote document to ~a~%" path)))
+
+;;(save-doc! *document* #P"/home/feuer/testi.sdlmap")
+	
+    
+  
+  ;; (with-open-file (tarball-stream path :direction :output :element-type '(unsigned-byte 8))
+  ;;   ;; (archive:write-entry-to-archive
+  ;;   ;;  (archive:entry-
+
+;;        

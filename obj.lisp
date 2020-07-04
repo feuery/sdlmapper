@@ -21,7 +21,8 @@
    ;; we have to keep hold of this for subobject purposes
   (surface nil (nonserializable))
    ;; "HW-accelerated" version of the above
-  (texture nil (nonserializable)))
+  (texture nil (nonserializable))
+  (id (random 9999999)))
 
 (defun init-obj (obj &key sdl-surface renderer)
   (with-slots* (position size angle color opacity surface texture) obj

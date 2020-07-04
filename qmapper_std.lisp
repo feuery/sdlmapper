@@ -43,6 +43,11 @@
       (read-sequence contents stream)
       contents)))
 
+(defun-export! spit (str filename)
+  (with-open-file (stream filename :direction :output :if-does-not-exist :create :if-exists :supersede)
+    
+    (format stream "~a" (prin1-to-string str))))
+
 (defun empty? (l)
   (let ((len (cond ((or (fset:map? l) (fset:seq? l)) (fset:size l))
 		   (t (length l)))))
@@ -810,6 +815,13 @@ by setting this var to nil and killing every process on the way. TODO make a bet
   (gethash key collection :not-found))
 
 (export 'with-slots*)
+
+(defun-export! vals (m)
+  "Returns all values of an fset:map"
+  (fset:reduce (lambda (acc k v)
+		 (cons v acc))
+	       m
+	       :initial-value nil))
 
 (defun-export! clean-hashmaps (m)
   "Cleans mutable hashmaps out of a hashmap/fset:map hybrid structure. Handles lists correctly."
