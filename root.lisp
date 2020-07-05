@@ -477,12 +477,37 @@
     (cl-fad:delete-directory-and-files output-dir-name)
     (format t "Wrote document to ~a~%" path)))
 
-;;(save-doc! *document* #P"/home/feuer/testi.sdlmap")
-	
-    
-  
-  ;; (with-open-file (tarball-stream path :direction :output :element-type '(unsigned-byte 8))
-  ;;   ;; (archive:write-entry-to-archive
-  ;;   ;;  (archive:entry-
+(defvar *dst-path* nil
+  "A moronic dynamic scope passing hack to pass a destination path to our hacked version of archive:extract-entry")
 
-;;        
+(defmethod archive:extract-entry ((archive archive:tar-archive) (entry archive::tar-entry))
+  "A hacked up version of the original with a way to pass the destination where to extract files as an argument"
+  (let ((name (str *dst-path* "/" (entry-name (pathname (archive:name entry))))))
+    (cond
+      ((= (archive::typeflag entry) archive::+tar-directory-file+)
+       (ensure-directories-exist name))
+      ((= (archive::typeflag entry) archive::+tar-regular-file+)
+       (ensure-directories-exist name)
+       (with-open-file (stream name :direction :output
+                               :if-exists :supersede
+                               :element-type '(unsigned-byte 8))
+         (archive::transfer-entry-data-to-stream archive entry stream)))
+      (t
+       (error 'unhandled-extract-entry-error :typeflag (archive::typeflag entry))))))
+
+
+(defun entry-name (pname)
+  (str (pathname-name pname) "."   (pathname-type pname)))
+
+(defun-export! load-doc! (path)
+  (let* ((input-dir-name (pathname (str "/tmp/sdlmapper-" (random 999999) "/")))
+	 (*dst-path* input-dir-name))
+    (format t "Files are to be extracted at ~a~%" input-dir-name)
+    (ensure-directories-exist input-dir-name)
+    (archive:with-open-archive (archive path :direction :input)
+      (archive::extract-files-from-archive archive))))
+
+
+;;(load-doc! #P"/home/feuer/testi.sdlmap")
+
+;;(save-doc! *document* #P"/home/feuer/testi.sdlmap")
