@@ -29,18 +29,6 @@
 
 (defparameter *server-running?* t)
 
-(defun clean-map (m)
-  (->> m
-       (mapcar (lambda (alist-cell)
-		 (cons (sb-mop:slot-definition-name (car alist-cell))
-		       (cdr alist-cell))))
-       (mapcar (lambda (alist-cell)
-		 (if (equalp (car alist-cell) 'layers)
-		     (cons 'layers (mapcar
-				    #'layer-name
-				    (cdr alist-cell)))
-		     alist-cell)))))
-
 (defun find-map-index (set-to-find-from
 		       ;; the lambda that transforms element of set-to-find-from to its id
 		       ;; otherwise I'd just do (with-slots (id) element), but CL's symbols are
@@ -216,16 +204,18 @@
 					      (setf chosenlayer layer-index)))))))))
 				    
 (defmessage "MAP-INFO" (message client-socket params)
-  (let ((id (car params)))
+  (let* ((id (car params))
+	 (result (->> *document*
+		      root-maps
+		      (remove-if-not (lambda (map)
+				       (equalp (prin1-to-string (map-id map)) id)))
+		      first
+		      filter-unserializables
+		      filter-seqs
+		      deep-convert->alist
+		      prin1-to-string)))
     (format (socket-stream client-socket) "~a"
-	    (->> *document*
-		 root-maps
-		 (remove-if-not (lambda (map)
-				  (equalp (prin1-to-string (map-id map)) id)))
-		 first
-		 obj->alist
-		 clean-map
-		 prin1-to-string))))
+	    result)))
 
 				    ;; ("GET-PROPS" (lambda (message client-socket params)
 				    ;; 		   (let* ((result (class-props-str (fset:lookup type->class-map (car params)))))

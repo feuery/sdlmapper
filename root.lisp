@@ -399,33 +399,6 @@
   (update-prop-in root (list "MAPS" map-id "SCRIPTS-TO-RUN") (partial #'fset:filter (lambda (script-id)
 										      (not (string= (script-id->ns root script-id) script-ns))))))
 
-(defun filter-unserializables (m)
-  (cond ((hash-table-p m)
-	 (filter-unserializables (fset:convert 'fset:map m)))
-	((listp m)
-	 (fset:convert 'fset:seq (mapcar #'filter-unserializables m)))
-	((fset:map? m)
-	 (let* ((m (fset:image (lambda (k v)
-		       (values k (filter-unserializables v)))
-			       m))
-		(nonserializables (fset:convert 'list (fset:lookup m "NONSERIALIZABLES"))))
-	   (reduce (lambda (m key)
-		     (fset:less m key))
-		   nonserializables
-		   :initial-value m)))
-	(t m)))
-
-(defun filter-seqs (m)
-  (cond ((fset:seq? m)
-	 (filter-seqs (fset:convert 'list m)))
-	((listp m)
-	 (mapcar #'filter-seqs m))
-	((fset:map? m)
-	 (fset:image (lambda (k v)
-		       (values k (filter-seqs v)))
-		     m))
-	(t m)))
-
 ;;(filter-seqs *document*)
 
 ;; (setf *document* (eval (read-from-string (prin1-to-string (filter-unserializables *document*)))))

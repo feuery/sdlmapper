@@ -671,14 +671,6 @@ by setting this var to nil and killing every process on the way. TODO make a bet
     (fset:remove-if (lambda (n) (fset:contains? (fset:convert 'fset:set seq-to-drop) n))
 		    src)))
 
-(defun-export! obj->alist (obj)
-  (->> obj
-       class-of 
-       sb-mop:class-slots
-       (mapcar (lambda (slot)
-		 (cons slot
-		       (sb-mop:slot-value-using-class (class-of obj) obj slot))))))
-
 (defun clone (obj)
   (let* ((obj-alist (obj->alist obj))
 	 (new-obj (sb-mop:make-instance (class-of obj))))
@@ -813,6 +805,46 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 	 (fset:image (lambda (k v)
 		       (values k (clean-hashmaps v)))
 		     m))
+	(t m)))
+
+(defun-export! deep-convert->alist (m)
+  "Cleans mutable hashmaps out of a hashmap/fset:map hybrid structure. Handles lists correctly."
+  (cond ((hash-table-p m)
+	 (deep-convert->alist (convert 'map m)))
+	((listp m)
+	 (mapcar #'deep-convert->alist m))
+	((fset:map? m)
+	 (convert 'list
+		  (fset:image (lambda (k v)
+		       (values k (deep-convert->alist v)))
+			      m)))
+	(t m)))
+
+(defun-export! filter-seqs (m)
+  (cond ((fset:seq? m)
+	 (filter-seqs (fset:convert 'list m)))
+	((listp m)
+	 (mapcar #'filter-seqs m))
+	((fset:map? m)
+	 (fset:image (lambda (k v)
+		       (values k (filter-seqs v)))
+		     m))
+	(t m)))
+
+(defun-export! filter-unserializables (m)
+  (cond ((hash-table-p m)
+	 (filter-unserializables (fset:convert 'fset:map m)))
+	((listp m)
+	 (fset:convert 'fset:seq (mapcar #'filter-unserializables m)))
+	((fset:map? m)
+	 (let* ((m (fset:image (lambda (k v)
+		       (values k (filter-unserializables v)))
+			       m))
+		(nonserializables (fset:convert 'list (fset:lookup m "NONSERIALIZABLES"))))
+	   (reduce (lambda (m key)
+		     (fset:less m key))
+		   nonserializables
+		   :initial-value m)))
 	(t m)))
 
 
