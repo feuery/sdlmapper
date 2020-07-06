@@ -448,9 +448,6 @@
 	((fset:map? m)
 	 (rutil:mapcat #'find-sdl-objs (vals m)))))
 
-;; (find-sdl-objs *document*)  
-
-;; TODO tää työntää ton saatanan kansiorakenteen tape archiveen, eikä sitä saa litistettyä. Se pitää ottaa jotenkin huomioon tätä ladatessa.
 (defun-export! save-doc! (doc path)
   ;; ensin puhdistetaan clean-hashmaps:illa
   ;; sitten iteroidaan läpi samalla rungolla kuin em. funktiossa, ja jokaiselta oliolta kysytään "NONSERIALIZABLE-FIELDS", eli lista avaimia jotka sitten dissocataan
@@ -466,7 +463,7 @@
 	     (filename (pathname (str output-dir-name "/" id ".png"))))
 	(sdl2-image:save-png (qmapper.obj:obj-surface obj)
 			     (str filename))))
-    ;; TODO spitataan docci .lispiin output-diriin ja sen jälkeen katotaan shellillä miltä näyttää
+
     (spit (filter-unserializables doc) (pathname (str output-dir-name "/doc.lisp")))
     (archive:with-open-archive (archive path :direction :output :if-exists :supersede :if-does-not-exist :create)
       (dolist (f (cl-fad:list-directory output-dir-name)
@@ -479,6 +476,9 @@
 
 (defvar *dst-path* nil
   "A moronic dynamic scope passing hack to pass a destination path to our hacked version of archive:extract-entry")
+
+(defun entry-name (pname)
+  (str (pathname-name pname) "." (pathname-type pname)))
 
 (defmethod archive:extract-entry ((archive archive:tar-archive) (entry archive::tar-entry))
   "A hacked up version of the original with a way to pass the destination where to extract files as an argument"
@@ -495,19 +495,77 @@
       (t
        (error 'unhandled-extract-entry-error :typeflag (archive::typeflag entry))))))
 
+(defun walk-and-transform (predicate transform tree)
+  (cond ((hash-table-p tree) (walk-and-transform predicate transform (fset:convert 'fset:map tree)))
+	((fset:seq? tree)
+	 (walk-and-transform predicate transform  (fset:convert 'list tree)))
+	((listp tree)
+	 (mapcar (partial #'walk-and-transform predicate transform) tree))
+	((fset:map? tree)
+	 ;; Do we want to handle maps as leaves of the tree?
+	 (if (funcall predicate tree)
+	     (funcall transform tree)
+	     (fset:image (lambda (k v)			   
+			   (values k
+				   ;; lets handle the actual atoms of the tree
+				   (if (funcall predicate v)
+					 (funcall transform v)
+					 (walk-and-transform predicate transform  v))))
+			 tree)))
+	(t tree)))
 
-(defun entry-name (pname)
-  (str (pathname-name pname) "."   (pathname-type pname)))
+;; TODO write a real test about this
+;; (walk-and-transform (lambda (leave)
+;; 		      (and (fset:map? leave)
+;; 			   (equalp (fset:lookup leave "LOL") 'bee)))
+;; 		    (lambda (leave)
+;; 		      (fset:with leave "LOL" 'transformed))
 
-(defun-export! load-doc! (path)
+;; 		    (fset:map ("A" (fset:map ("B" 3)
+;; 			 ("D" (fset:map ("LOL" 'aa)))))
+
+;; 	  ("D" (list (fset:map ("B" 3)
+;; 			       ("D" (fset:map ("LOL" 'aa))))
+;; 		     (fset:map ("B" 3)
+;; 			       ("D" (fset:map ("LOL" 'aa))))
+;; 		     (fset:map ("B" 3)
+;; 			       ("D" (fset:map ("LOL" 'bee))))))))
+;; => #{|
+;;    ("A" #{| ("B" 3) ("D" #{| ("LOL" AA) |}) |})
+;;    ("D"
+;;     (#{| ("B" 3) ("D" #{| ("LOL" AA) |}) |}
+;;      #{| ("B" 3) ("D" #{| ("LOL" AA) |}) |}
+;;      #{| ("B" 3) ("D" #{| ("LOL" TRANSFORMED) |}) |})) |}
+
+
+(defun-export! load-doc! (path renderer)
   (let* ((input-dir-name (pathname (str "/tmp/sdlmapper-" (random 999999) "/")))
 	 (*dst-path* input-dir-name))
     (format t "Files are to be extracted at ~a~%" input-dir-name)
     (ensure-directories-exist input-dir-name)
     (archive:with-open-archive (archive path :direction :input)
-      (archive::extract-files-from-archive archive))))
+      (archive::extract-files-from-archive archive))
 
-
-;;(load-doc! #P"/home/feuer/testi.sdlmap")
-
-;;(save-doc! *document* #P"/home/feuer/testi.sdlmap")
+    (let ((loaded-document (->>  (str input-dir-name "/doc.lisp")
+				 slurp
+				 read-from-string
+				 eval
+				 filter-seqs
+				 (walk-and-transform
+				  ;; if a leave is a map and has a type of obj
+				  (lambda (leave)
+				    (let ((result 
+					    (and (fset:map? leave)
+						 (equalp (fset:lookup leave "TYPE")
+							 "OBJ"))))
+				      result))
+				  ;; then set its surface and texture correctly
+				  (lambda (leave)
+				    (let ((img-path (str input-dir-name (fset:lookup leave "ID") ".png")))
+				      ;;(format t "Loading image ~a~%" img-path)
+				      (with-slots* (surface texture) leave
+					(setf surface (sdl2-image:load-image img-path))
+					(setf texture (sdl2:create-texture-from-surface renderer surface)))))))))
+      (format t "Removing files from ~a~%" input-dir-name)
+      (cl-fad:delete-directory-and-files input-dir-name)
+      loaded-document)))

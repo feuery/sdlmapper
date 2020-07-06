@@ -509,26 +509,6 @@
 (defun-export! prop-sym?  (alist k)
   (symbolp (get-prop alist k)))
 
-;; (tree-il->scheme
-;;  (macroexpand 
-;;   '(defcppclass Layer
-;; 		 (public
-;; 		  (properties
-;; 		   (std__string name "")
-;; 		   (unsigned_char opacity 255)
-;; 		   (bool visible #t)
-;; 		   (std__vector<std__vector<Tile*>>* tiles '())
-;; 		   (Map* parent nil))
-;; 		  (functions
-;; 		   (width ()
-;; 			  (length (first (Layer-tiles (this)))))
-;; 		   (height ()
-;; 			   (length (caar (Layer-tiles (this))))))))))
-
-
-
-;; (layer- (make-Layer 'p '(1 2 3) #t 244 "Layer")
-
 (defmacro-export! condp (bin-op param1 &rest rst)
   "This is supposed to work like clojure's condp. This evaluates param1 only once.
 (condp equalp \"Lollero ooo\"

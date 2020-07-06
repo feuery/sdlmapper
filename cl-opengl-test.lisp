@@ -168,6 +168,12 @@
 
 ;; (main)
 
+;; example/test code for loading a project
+;; (schedule-once (lambda ()
+;; 		 (setf *document*
+;; 		       (load-doc! #P"/home/feuer/testi.sdlmap" *renderer*))))
+    
+
 ;; (setf *document* (qmapper.root:init-root!))
 
 ;; (with-slots (tilesets) *document*
