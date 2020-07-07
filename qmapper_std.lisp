@@ -1,6 +1,6 @@
 (defpackage :qmapper.std
   (:use :common-lisp :cl-arrows)
-  (:export :get-ms-time :clone :class-props :class-props-str)
+  (:export :class->props :get-ms-time :clone :class-props :class-props-str)
   (:import-from :qmapper.export :defmacro-export! :defun-export! :defvar-export!)
   (:import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable)
   (:import-from :cl-ppcre :regex-replace-all :create-scanner :scan :parse-string)
@@ -710,6 +710,8 @@ by setting this var to nil and killing every process on the way. TODO make a bet
                 rest
                 :initial-value (apply fn1 args)))))
 
+(defvar class->props (fset:empty-map))
+
 (defmacro defclass* (class-name &rest slot-val-tags-triplets)
   (unless (car slot-val-tags-triplets)
     (format t "First slot is nil. Have you converted from the clos defclass perhaps?~%")
@@ -736,6 +738,9 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 						      (position 'nonserializable tags :test #'string=)))))
 				 (mapcar (compose #'prin1-to-string #'first))
 				 (cons 'list))))
+    ;; tää laittaa ne propsut tonne class->propsiin
+    ;; sitten GET-PROPS editor_serverissä kattoo ne propsut täältä
+    (setf class->props (fset:with class->props (symbol-name class-name) slots))
     `(progn
        ,@getters
        (defun-export! ,ctr-name ,ctr-params
@@ -846,6 +851,51 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 		   nonserializables
 		   :initial-value m)))
 	(t m)))
+
+(defun-export! walk-and-transform (predicate transform tree)
+  (cond ((hash-table-p tree) (walk-and-transform predicate transform (fset:convert 'fset:map tree)))
+	((fset:seq? tree)
+	 (walk-and-transform predicate transform  (fset:convert 'list tree)))
+	((listp tree)
+	 (mapcar (partial #'walk-and-transform predicate transform) tree))
+	((fset:map? tree)
+	 ;; Do we want to handle maps as leaves of the tree?
+	 (if (funcall predicate tree)
+	     (funcall transform tree)
+	     (fset:image (lambda (k v)			   
+			   (values k
+				   ;; lets handle the actual atoms of the tree
+				   (if (funcall predicate v)
+					 (funcall transform v)
+					 (walk-and-transform predicate transform  v))))
+			 tree)))
+	(t tree)))
+
+;; TODO write a real test about this
+;; (walk-and-transform (lambda (leave)
+;; 		      (and (fset:map? leave)
+;; 			   (equalp (fset:lookup leave "LOL") 'bee)))
+;; 		    (lambda (leave)
+;; 		      (fset:with leave "LOL" 'transformed))
+
+;; 		    (fset:map ("A" (fset:map ("B" 3)
+;; 			 ("D" (fset:map ("LOL" 'aa)))))
+
+;; 	  ("D" (list (fset:map ("B" 3)
+;; 			       ("D" (fset:map ("LOL" 'aa))))
+;; 		     (fset:map ("B" 3)
+;; 			       ("D" (fset:map ("LOL" 'aa))))
+;; 		     (fset:map ("B" 3)
+;; 			       ("D" (fset:map ("LOL" 'bee))))))))
+;; => #{|
+;;    ("A" #{| ("B" 3) ("D" #{| ("LOL" AA) |}) |})
+;;    ("D"
+;;     (#{| ("B" 3) ("D" #{| ("LOL" AA) |}) |}
+;;      #{| ("B" 3) ("D" #{| ("LOL" AA) |}) |}
+;;      #{| ("B" 3) ("D" #{| ("LOL" TRANSFORMED) |}) |})) |}
+
+
+
 
 
 

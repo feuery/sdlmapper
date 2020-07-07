@@ -103,7 +103,7 @@
 			(local-set-key "q" 'quit-window)
 			(switch-to-buffer buffer))))))
 
-(defun qmapper-set-value (object-type obj-id lambda-to-call-when-ready &optional map-id)
+(defun qmapper-set-value (object-type obj-id lambda-to-call-when-ready)
   (interactive "sObject type: ")
   (query-qmapper (concat "GET-PROPS;" object-type ";\n")
 		 (lambda (prop-names)
@@ -119,9 +119,7 @@
 					(lambda (result)
 					  (message (prin1-to-string result))))
 		       
-		       (query-qmapper (if map-id
-					  (concat "SET-PROP;" object-type ";" map-id ";" obj-id ";" name ";" value "\n")
-					(concat "SET-PROP;" object-type ";" obj-id ";" name ";" value "\n"))
+		       (query-qmapper (concat "SET-PROP;" object-type ";" obj-id ";" name ";" value "\n")
 				      (lambda (result)
 					(funcall lambda-to-call-when-ready))))))))
 
@@ -135,14 +133,12 @@
 													 (lambda (&rest rst)
 													   (quit-window t)
 													   (qmapper-layers-of map-id)))))
-								     ;; TODO layerit on tosiaan siellä mapin alla, joten tää vaatii special casen
 								     (local-set-key "s" (lambda ()
 								     			  (interactive)
 								     			  (qmapper-set-value "LAYER" (qmapper-selected-row-id)
 								     					     (lambda ()
 								     					       (quit-window)
-								     					       (qmapper-layers-of map-id))
-													     map-id)))
+								     					       (qmapper-layers-of map-id)))))
 								     (local-set-key (kbd "<return>") (lambda ()
 												       (interactive)
 												       (let ((layer-id (qmapper-selected-row-id)))

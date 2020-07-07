@@ -468,49 +468,6 @@
       (t
        (error 'unhandled-extract-entry-error :typeflag (archive::typeflag entry))))))
 
-(defun walk-and-transform (predicate transform tree)
-  (cond ((hash-table-p tree) (walk-and-transform predicate transform (fset:convert 'fset:map tree)))
-	((fset:seq? tree)
-	 (walk-and-transform predicate transform  (fset:convert 'list tree)))
-	((listp tree)
-	 (mapcar (partial #'walk-and-transform predicate transform) tree))
-	((fset:map? tree)
-	 ;; Do we want to handle maps as leaves of the tree?
-	 (if (funcall predicate tree)
-	     (funcall transform tree)
-	     (fset:image (lambda (k v)			   
-			   (values k
-				   ;; lets handle the actual atoms of the tree
-				   (if (funcall predicate v)
-					 (funcall transform v)
-					 (walk-and-transform predicate transform  v))))
-			 tree)))
-	(t tree)))
-
-;; TODO write a real test about this
-;; (walk-and-transform (lambda (leave)
-;; 		      (and (fset:map? leave)
-;; 			   (equalp (fset:lookup leave "LOL") 'bee)))
-;; 		    (lambda (leave)
-;; 		      (fset:with leave "LOL" 'transformed))
-
-;; 		    (fset:map ("A" (fset:map ("B" 3)
-;; 			 ("D" (fset:map ("LOL" 'aa)))))
-
-;; 	  ("D" (list (fset:map ("B" 3)
-;; 			       ("D" (fset:map ("LOL" 'aa))))
-;; 		     (fset:map ("B" 3)
-;; 			       ("D" (fset:map ("LOL" 'aa))))
-;; 		     (fset:map ("B" 3)
-;; 			       ("D" (fset:map ("LOL" 'bee))))))))
-;; => #{|
-;;    ("A" #{| ("B" 3) ("D" #{| ("LOL" AA) |}) |})
-;;    ("D"
-;;     (#{| ("B" 3) ("D" #{| ("LOL" AA) |}) |}
-;;      #{| ("B" 3) ("D" #{| ("LOL" AA) |}) |}
-;;      #{| ("B" 3) ("D" #{| ("LOL" TRANSFORMED) |}) |})) |}
-
-
 (defun-export! load-doc! (path renderer)
   (let* ((input-dir-name (pathname (str "/tmp/sdlmapper-" (random 999999) "/")))
 	 (*dst-path* input-dir-name))
