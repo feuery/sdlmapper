@@ -224,44 +224,29 @@
     (format (socket-stream client-socket) "~a" (prin1-to-string result))))
 
 (defmessage "SET-PROP" (message client-socket params)
-  (let ((object-type (car params)))
-    (destructuring-bind (object-type id name value) params
-      (setf *document*
-	    (walk-and-transform
-	     (lambda (v)
-	       (format t "Predicating ~a~%" v)
-	       (and (fset:map? v)
-		    (equalp (fset:lookup v "TYPE") object-type)
-		    (equalp (str (fset:lookup v "ID")) id)))
-	     (lambda (layer)
-	       (format t "Transforming ~a~%" layer)
-	       (fset:with layer name value))
-	     *document*)))))
+  (destructuring-bind (object-type id name value) params
+    (setf *document*
+	  (walk-and-transform
+	   (lambda (v)
+	     (and (fset:map? v)
+		  (equalp (fset:lookup v "TYPE") object-type)
+		  (equalp (str (fset:lookup v "ID")) id)))
+	   (lambda (layer)
+	     (fset:with layer name value))
+	   *document*))))
 
+(defmessage "REVERSE-BOOL-PROP" (message client-socket params)
+  (destructuring-bind (object-type object-id name) params
+    (setf *document*
+	  (walk-and-transform
+	   (lambda (v)
+	     (and (fset:map? v)
+		  (equalp (fset:lookup v "TYPE") object-type)
+		  (equalp (str (fset:lookup v "ID")) object-id)))
+	   (lambda (v)
+	     (fset:with v name (not (fset:lookup v name))))
+	   *document*))))
 
-				    ;; ("REVERSE-BOOL-PROP" (lambda (message client-socket params)
-				    ;; 			   (let ((object-type (car params)))
-				    ;; 			     (if (equalp object-type "LAYER")
-				    ;; 				 (destructuring-bind (object-type map-id layer-id name) params
-				    ;; 				   (let* ((object (get-layer-obj *document* (parse-integer map-id) (parse-integer layer-id)))
-				    ;; 					  (slot (->> object
-				    ;; 						     class-of
-				    ;; 						     sb-mop:class-slots
-				    ;; 						     (remove-if-not (lambda (slot-val)
-				    ;; 								      (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
-				    ;; 						     car))
-				    ;; 					  (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
-				    ;; 				     (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))
-				    ;; 				 (destructuring-bind (object-type object-id name) params
-				    ;; 				   (let* ((object (get-obj *document* object-type (parse-integer object-id)))
-				    ;; 					  (slot (->> object
-				    ;; 						     class-of
-				    ;; 						     sb-mop:class-slots
-				    ;; 						     (remove-if-not (lambda (slot-val)
-				    ;; 								      (equalp (symbol-name (sb-mop:slot-definition-name slot-val)) name)))
-				    ;; 						     car))
-				    ;; 					  (old-val (sb-mop:slot-value-using-class (class-of object) object slot)))
-				    ;; 				     (setf (sb-mop:slot-value-using-class (class-of object) object slot) (not old-val))))))))
 (defmessage "LOAD-SPRITE" (message client-socket params)
   (destructuring-bind (path sprite-name) params
     (schedule-once (lambda ()

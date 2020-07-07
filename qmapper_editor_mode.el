@@ -112,10 +112,8 @@
 			  (visible-prop (string= name "VISIBLE"))
 			  (value (if (not visible-prop)
 				     (read-string "Property value: "))))
-
 		     (if visible-prop
-			 (query-qmapper (if map-id (concat "REVERSE-BOOL-PROP;" object-type ";" map-id ";" obj-id ";" name "\n")
-					  (concat "REVERSE-BOOL-PROP;" object-type ";" obj-id ";" name "\n"))
+			 (query-qmapper (concat "REVERSE-BOOL-PROP;" object-type ";" obj-id ";" name "\n")
 					(lambda (result)
 					  (message (prin1-to-string result))))
 		       
