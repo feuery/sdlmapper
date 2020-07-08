@@ -437,6 +437,16 @@
 (defun-export! update-prop (obj key fn)
   (set-prop obj key (funcall fn (get-prop obj key))))
 
+(defun set-prop (obj key val)
+  (cond ((or (fset:map? obj)
+	     (fset:seq? obj))
+	 (fset:with obj key val))
+	((listp obj)
+	 (setf (nth key obj) val)
+	 obj)
+	(t
+	 (error "set-prop supports only fset:maps, fset:seqs and lisp's lists"))))
+
 (defun-export! update-prop-in (obj ks fn)
   (let* ((key (clean-key (car ks)))
 	 (cdr? (equal 'cdr key))

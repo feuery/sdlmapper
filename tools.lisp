@@ -68,3 +68,12 @@
 	   (new-sprite (set-angle nearest angle )))
       (setf (nth chosenmap maps)
 	    (update-map-sprite map new-sprite)))))
+
+(deftool :hitdata-tool (root x y tile-x tile-y selected-tile)
+  (with-slots* (maps chosenmap) root
+    (let ((map (nth chosenmap maps)))
+      (setf map (with-slots* (hit-layer) map
+		  (setf hit-layer (update-prop-in hit-layer (list tile-x tile-y) #'not))))
+      (setf (nth chosenmap maps) map))))
+
+
