@@ -72,9 +72,6 @@
 (defvar-export! draw-rect nil)
 (defvar-export! cpp-hittool-chosen nil)
 
-(defun-export! hit-tool-chosen? ()
-  nil)
-
 (defun-export! render-img (dst img)
   nil ;; (funcall render dst img)
   )

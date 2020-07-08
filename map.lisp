@@ -196,6 +196,9 @@
     (let ((tiles (tileset-tiles tileset)))
       (get-in tiles (list x y)))))
 
+(defun-export! hit-tool-chosen? ()
+  (equalp (root-chosentool *document*) :HITDATA-TOOL))
+
 (defmultimethod qmapper.obj:draw "map" (map args)
   (let ((renderer (fset:lookup args "RENDERER"))
 	(dst (fset:lookup args "DST"))
