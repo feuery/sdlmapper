@@ -34,19 +34,6 @@
        (first)
        (last)))
 
-;; tää ei toimi
-(defun-export! invert-hit-tile (map x y)
-  ;; get-prop-in is a bit stupid and coerces nils to #[ ], of which #'not doesn't understand anything
-  (update-prop-in map (list "HIT-LAYER" x y) (lambda (hit-obj)
-					       (if (equalp hit-obj (fset:seq))
-						   t
-						   (not hit-obj)))))
-
-;; tääkään ei toimi
-(defun-export! invert-hit-tile-in-chosen-map (root x y)
-  (update-prop-in root (list "MAPS" (root-chosenmap root))
-		  (lambda (map)
-		    (invert-hit-tile map x y))))
 
 (defun boolp (b &rest rst)
   (typep b 'boolean))
@@ -60,7 +47,8 @@
    (sprites '())
    (animatedSprites '())
    (hit-layer '())
-   (scripts-to-run '())
+   (on-load-scripts nil)
+   (on-unload-scripts nil)
    (has-gravity? nil)) ;;validator  #'boolp))
 
 (defun init-map (map &key layer-w layer-h layer-count)
@@ -107,29 +95,6 @@
 				 (map-animatedSprites map)))))
     (car (find-nearest mouse-x mouse-y lst))))
 
-      
-
-;; (defun-export! make-map-with-layers (doc name w h layer-count)
-;;   (let* ((layers (repeatedly (lambda (i)
-;; 			       (let ((l 
-;; 				       (make-Layer :name (str (prin1-to-string i) "th layer")
-;; 						   :tiles
-;; 						   (make-tiles w h))))
-;; 					;(format t "making layer ~a ~%" l)
-;; 				 l)) layer-count))
-;; 	 (ids (mapcar (lambda (l) (get-prop l "ID")) layers))
-;; 	 (map (make-map :name name
-;; 			:layers ids
-;; 			:sprites '()
-;; 			:animatedSprites '()
-;; 			:hit-layer (make-hitlayer w h)
-;; 			:scripts-to-run '())))
-;;     (-> (set-root-layers! doc
-;; 			  (reduce (lambda (all-layers layer)
-;; 				    (set-prop all-layers (get-prop layer "ID") layer)) layers :initial-value (root-layers doc)))
-;; 	(set-root-maps! (set-prop (root-maps doc) (get-prop map "ID") map))
-;; 	(set-root-chosenmap! (get-prop map "ID")))))
-
 (defun get-layer (doc map index)
   (let ((layer-list (map-layers map)))
     (get-prop (root-layers doc) (get-prop layer-list index))))
@@ -163,10 +128,11 @@
   (let* ((engine-doc qmapper.root:*engine-document*)
 	 (map (get-prop-in engine-doc (list "MAPS" map-id)))
 	 (gravity? (map-has-gravity? map))
-	 (script-ids (map-scripts-to-run map))
-	 (scripts (fset:image (lambda (id)
-				(get-prop-in engine-doc (list "SCRIPTS" id)))
-			      script-ids)))
+	 ;;(script-ids (map-scripts-to-run map))
+	 (scripts (fset:empty-map) ;;  (fset:image (lambda (id)
+			      ;; 	(get-prop-in engine-doc (list "SCRIPTS" id)))
+			      ;; script-ids)
+		  ))
     (stop-gravity-loop!)
     ;; (format t "map: ~a~%" map)
     (format t "stopped gravity, restarting it? ~a~%" gravity?)
