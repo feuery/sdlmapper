@@ -2,6 +2,7 @@
   (:use :common-lisp
 	:qmapper.app-state
 	:qmapper.animatedsprite
+	:qmapper.script
 	:qmapper.sprite
 	:qmapper.tools
         :qmapper.std
@@ -276,6 +277,12 @@
 						:framecount (parse-integer framecount)
 						:renderer *renderer*))
 					   animatedsprites))))))))
+
+(defmessage "CREATE-SCRIPT" (message client-socket params)
+  (destructuring-bind (ns) params
+    (setf *document*
+	  (with-slots* (scripts) *document*
+	    (setf scripts (cons (make-script :ns ns) scripts))))))
 
 
 

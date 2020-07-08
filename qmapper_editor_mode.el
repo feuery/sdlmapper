@@ -196,6 +196,12 @@
   (query-qmapper (concat "LOAD-ANIMATION;" animation-path ";" (prin1-to-string framecount) ";" name "\n")
 		 (lambda (result)
 		   (message (concat "Loaded animation " result)))))
+
+(defun qmapper-new-script (ns)
+  (interactive "sNamespace of new script: ")
+  (query-qmapper (concat "CREATE-SCRIPT;" ns"\n")
+		 (lambda (result)
+		   nil)))
 		 
 
 
