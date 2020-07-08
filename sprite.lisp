@@ -71,11 +71,12 @@
 (defmultimethod draw "sprite" (sprite args)
   (let ((renderer (fset:lookup args "RENDERER")))
     (with-slots* (x y angle obj-sprite) sprite
-		 (setf obj-sprite 
-		       (with-slots* (position) obj-sprite
-				    (setf position (list x y)
-					  (gethash "ANGLE" obj-sprite) angle)
-				    (draw obj-sprite (fset:map ("RENDERER" renderer))))))))
+      (setf obj-sprite 
+	    (with-slots* (obj-angle position) obj-sprite
+		(setf position (list x y)
+		      obj-angle angle)
+		(draw obj-sprite (fset:map ("RENDERER" renderer))))))))
+
 
 (defmulti update-map-sprite #'equalp (map new-sprite)
   (fset:lookup new-sprite "TYPE"))

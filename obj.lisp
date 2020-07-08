@@ -13,7 +13,7 @@
    ;; in pixels
    (size nil)
    ;; in degrees
-  (angle 0)
+  (obj-angle 0)
    ;; the error color used when can't render surface (I guess)
   (color nil)
    ;; 255...0, opaque...translucent
@@ -25,13 +25,13 @@
   (id (random 9999999)))
 
 (defun init-obj (obj &key sdl-surface renderer)
-  (with-slots* (position size angle color opacity surface texture) obj
+  (with-slots* (position size obj-angle color opacity surface texture) obj
     (setf surface sdl-surface
 	  texture (sdl2:create-texture-from-surface renderer sdl-surface)
 	  position (list 0 0)
 	  size (list (sdl2:surface-width sdl-surface)
 		     (sdl2:surface-height sdl-surface))
-	  angle 0
+	  obj-angle 0
 	  color (list 0 0 255)
 	  opacity 255)
     (sdl2:set-texture-blend-mode texture :blend)))
@@ -42,13 +42,13 @@
 
 (defmultimethod draw "obj" (obj args)
   (let ((renderer (fset:lookup args "RENDERER")))
-    (with-slots* (position texture size opacity angle) obj
+    (with-slots* (position texture size opacity obj-angle) obj
 		 ;; (format t "Drawing obj sprite at ~a~%" position)
 		 (sdl2:with-rects ((dst-rect (car position) (cadr position)
 					     (car size) (cadr size)))
 		   (sdl2:set-texture-alpha-mod texture  opacity)
 		   (sdl2:render-copy-ex renderer texture :dest-rect dst-rect
-					:angle angle)))))
+					:angle obj-angle)))))
 
 (defun xor (&rest args)
   (flet ((xor2 (a b) (not (eq (not a) (not b)))))

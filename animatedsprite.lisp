@@ -31,6 +31,10 @@
 (defun animatedsprite-maxFrames (*this*)
   (length (animatedsprite-sprites *this*)))
 
+(defun set-sprite-angle (sprite an)
+  (with-slots* (angle) sprite
+    (setf angle an)))
+
 (defmultimethod draw "animatedsprite" (animation args)
   ;; TODO this messing around with sprite index does not in fact belong in the drawing function
   (setf *document*
@@ -45,9 +49,8 @@
 			    (with-slots* (sprites x y currentframeid angle ) (-> animation
 										 animatedsprite-advanceframeifneeded!)
 				(setf (nth currentframeid sprites)
-				      (with-slots* (position) (nth currentframeid sprites)
+				      (with-slots* (position) (set-sprite-angle (nth currentframeid sprites) angle)
 					(setf position (list x y))
-					(setf (gethash "ANGLE" (nth currentframeid sprites))  angle)
 					(draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))))
 	    (setf qmapper.root:maps the-maps)))))
 
