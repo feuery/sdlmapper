@@ -1,6 +1,6 @@
 (defpackage :qmapper.std
   (:use :common-lisp :cl-arrows)
-  (:export :class->props :get-ms-time :clone :class-props :class-props-str)
+  (:export :class->props :get-ms-time :class-props :class-props-str)
   (:import-from :qmapper.export :defmacro-export! :defun-export! :defvar-export!)
   (:import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable)
   (:import-from :cl-ppcre :regex-replace-all :create-scanner :scan :parse-string)
@@ -670,34 +670,6 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 			 seq-to-drop)))
     (fset:remove-if (lambda (n) (fset:contains? (fset:convert 'fset:set seq-to-drop) n))
 		    src)))
-
-(defun clone (obj)
-  (let* ((obj-alist (obj->alist obj))
-	 (new-obj (sb-mop:make-instance (class-of obj))))
-    (reduce (lambda (acc slot-val-pair)
-	      (setf (sb-mop:slot-value-using-class (class-of acc) acc (car slot-val-pair))
-		    (cdr slot-val-pair))
-	      acc)
-	    obj-alist
-	    :initial-value new-obj)))
-
-(defun-export! custom-object-print (obj)
-  (->> obj
-       obj->alist
-       (mapcar (lambda (alist-cell)
-		 (cons (sb-mop:slot-definition-name (car alist-cell))
-		       (cdr alist-cell))))
-       prin1-to-string))
-
-(defun class-props (class)
-  (->> class
-       sb-mop:class-slots
-       (mapcar #'sb-mop:slot-definition-name)))
-
-(defun class-props-str (class)
-  (->> class
-       class-props
-       (mapcar #'symbol-name)))
 
 (defun get-ms-time ()
   (* 1000

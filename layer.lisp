@@ -17,6 +17,9 @@
   (visible t)
   (tiles '()))
 
+;; sanity check that makes sure reflection towards emacs api works
+(assert (fset:lookup class->props "LAYER"))
+
 (defparameter +layer-tiles+ nil)
 
 (defun layer-width (*this*)
@@ -36,7 +39,7 @@
 				     (if (or (eq tile-value nil)
 					     (eq tile-value t))
 					 tile-value
-					 (clone tile-value))) h)) w)))
+					 tile-value)) h)) w)))
     all-tiles))
 
 (defun-export! make-tiles (w h)
