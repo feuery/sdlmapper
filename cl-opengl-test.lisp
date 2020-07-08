@@ -163,6 +163,7 @@
     (sdl2:with-window (win :title "qmapper without the q" :flags '(:shown :resizable))
       (let* ((renderer (sdl2:create-renderer win)))
 	(sdl2:set-render-draw-color renderer 255 0 0 255)
+	(sdl2:set-render-draw-blend-mode renderer sdl2-ffi:+SDL-BLENDMODE-BLEND+)
 	(setf *renderer* renderer)
 	(event-loop renderer)))))
 

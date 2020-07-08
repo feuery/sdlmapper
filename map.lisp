@@ -145,10 +145,11 @@
 ;; (defun set-image-subobject (dst tile subtile)
 ;;   (funcall set-img-subobj dst (tile-gl-key tile) (tile-gl-key subtile)))
 
-(defun draw-colored-rect (x y r g b a)
-  (error 'not-implemented)
-  ;; (funcall draw-rect x y r g b a)
-  )
+(defun draw-colored-rect (renderer x y r g b a)
+  (multiple-value-bind (old-r old-g old-b old-a) (sdl2:get-render-draw-color renderer)
+    (sdl2:set-render-draw-color renderer r g b a)
+    (sdl2:render-fill-rect renderer (sdl2:make-rect x y 50 50))
+    (sdl2:set-render-draw-color renderer old-r old-g old-b old-a)))
 
 (defun save-and-load-tmp! (contents)
   "Saves the parameter as a file in /tmp and tries to (load) it. This tries to hack around CL's eval not knowing where just-imported symbols should be imported from"
@@ -259,7 +260,8 @@
 		       (y (cadr pair))
 		       (hit-tile (get-prop-in hitdata (list x y))))
 		  
-		  (draw-colored-rect (* x 50)
+		  (draw-colored-rect renderer 
+				     (* x 50)
 				     (* y 50)
 				     (if hit-tile
 					 0
@@ -267,7 +269,7 @@
 				     (if hit-tile
 					 255 0)
 				     0
-				     127)))))
+				     70)))))
 
 	(dolist (sprite sprites)
 	  (draw sprite (fset:map ("RENDERER" renderer))))
