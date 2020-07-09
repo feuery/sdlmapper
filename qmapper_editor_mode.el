@@ -199,7 +199,13 @@
 
 (defun qmapper-new-script (ns)
   (interactive "sNamespace of new script: ")
-  (query-qmapper (concat "CREATE-SCRIPT;" ns"\n")
+  (query-qmapper (concat "CREATE-SCRIPT;" ns "\n")
+		 (lambda (result)
+		   nil)))
+
+(defun qmapper-start-pause-game ()
+  (interactive)
+  (query-qmapper (concat "START-PAUSE-GAME\n")
 		 (lambda (result)
 		   nil)))
 		 

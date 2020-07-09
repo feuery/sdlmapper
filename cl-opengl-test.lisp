@@ -35,7 +35,14 @@
 	      (draw map (fset:map ("RENDERER" renderer))))))
       ;; (ERROR (e)
 	;; 	(format t "error ~a~%" e)))
-	))
+    ))
+
+(defmultimethod render-scene (list :engine :tileset) (renderer root)
+  (format t "Rendering game scene ~%"))
+
+(defmultimethod render-scene (list :engine :map) (renderer root)
+  (let ((editor-state :tileset))
+    (render-scene renderer root)))
 
 (defmulti handle-drag #'equalp (root x y left-or-right)
   (list app-state editor-state))

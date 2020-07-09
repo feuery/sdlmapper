@@ -284,6 +284,12 @@
 	  (with-slots* (scripts) *document*
 	    (setf scripts (cons (make-script :ns ns) scripts))))))
 
+(defmessage "START-PAUSE-GAME" (message client-socket params)
+  (if (equalp app-state :editor)
+      (setf app-state :engine)
+      (setf app-state :editor))
+  (format t "Started the game"))
+
 
 
 (defun process-editor-events (client-socket socket-stream message)
