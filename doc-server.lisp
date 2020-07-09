@@ -48,7 +48,7 @@
   "Run TCP server in a loop, listening to incoming connections.
   This is single-threaded version. Do NOT call this in REPL, in qmapper this'll
   be wrapped inside a QThread"
-  (format t "port in run-tcp-server: ~a~%" port)
+  (format t "starting doc-server~%port in run-tcp-server: ~a~%~%" port)
   (let ((host "127.0.0.1"))
     (with-server-socket (master-socket (usocket:socket-listen host port :backlog 256))
       (format t "let's wait-for-input~%")
@@ -85,12 +85,15 @@
 					   cl-strings:clean
 					   (cl-strings:replace-all "" "")))
 				   (_ (format t "finding ns ~a~%" ns))
-				   (script (root-findns *document* ns)))
+				   (script (->> (root-scripts *document*)
+						(remove-if-not (lambda (script)
+								 (equalp (script-ns script) ns)))
+						first)))
 			      (if script
-				  (let* ((contents (get-prop script "CONTENTS"))
+				  (let* ((contents (fset:lookup script "CONTENTS"))
 					 (_ (format t "script is ~a~%" script))
 					 (firstLine (car (cl-strings:split contents (format nil "~%"))))
-					 (is-lisp? (script-is-lisp? script))
+					 (is-lisp? t)
 					 (modeline-scanner (create-scanner "mode: (lisp|glsl)"))
 					 (contains-modeline? (scan modeline-scanner contents)))
 				    (if contains-modeline?
@@ -101,14 +104,24 @@
 				  (format t "didn't find a script~%")))
 		       "SAVE-NS" (let* ((ns (nth 1 split-row))
 					(rows-to-read (parse-integer (nth 2 split-row)))
-					(contents (read-stream-times socket-stream rows-to-read)))
+					(new-contents (read-stream-times socket-stream rows-to-read)))
 				   ;; (format t "saving contents ~a~%" contents)
 				   ;; (format t "row is ~a~%" row)
 				   ;; (format t "and start to remove is ~a:~a:~%"
 				   ;; 	   (car split-row)
 				   ;; 	   (cadr split-row))
-				   (assert contents)
-				   (root-savens *document* ns contents))))))))
+				   (assert new-contents)
+				   ;;(root-savens *document* ns contents)
+				   (walk-and-transform
+				    (lambda (v)
+				      (and (fset:map? v)
+					   (equalp (fset:lookup v "TYPE") "SCRIPT")
+					   (equalp (script-ns v) ns)))
+				    (lambda (script)
+				      (with-slots* (contents) script
+					(setf contents new-contents)))
+				    *document*))))))))
+					
 
 (defun process-client-socket (client-socket actual-processor)
   "Process client socket that got some activity"
@@ -119,3 +132,6 @@
     (funcall actual-processor client-socket socket-stream message)))
 
 (export 'process-client-socket)
+(run-tcp-server-threaded 3006)
+
+
