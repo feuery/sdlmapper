@@ -208,6 +208,51 @@
   (query-qmapper (concat "START-PAUSE-GAME\n")
 		 (lambda (result)
 		   nil)))
+
+(defun qmapper-add-script-to-onload ()
+  (interactive)
+  (query-qmapper "FULL-NS-LIST\n"
+		 (lambda (ns-list)
+		   (let ((ns-list (read-from-string ns-list)))
+		     (setq +ns-list+ ns-list)
+		     (let* ((ns (completing-read "Script ns to be added to current map's onload collection: " ns-list nil t)))
+		       (query-qmapper (concat "ADD-SCRIPT-TO-ONLOAD;" ns ";\n")
+				      (lambda (resp)
+					t)))))))
+
+(defun qmapper-add-script-to-on-unload ()
+  (interactive)
+  (query-qmapper "FULL-NS-LIST\n"
+		 (lambda (ns-list)
+		   (let ((ns-list (read-from-string ns-list)))
+		     (setq +ns-list+ ns-list)
+		     (let* ((ns (completing-read "Script ns to be added to current map's on-unload collection: " ns-list nil t)))
+		       (query-qmapper (concat "ADD-SCRIPT-TO-ON-UNLOAD;" ns ";\n")
+				      (lambda (resp)
+					t)))))))
+
+(defun qmapper-drop-script-from-on-unload ()
+  (interactive)
+  (query-qmapper "CURRENT-SCRIPT-LIST;ON-UNLOAD\n"
+		 (lambda (ns-list)
+		   (let ((ns-list (read-from-string ns-list)))
+		     
+		     (let* ((ns (completing-read "Script ns to be removed from current map's on-unload collection: " ns-list nil t)))
+		       (query-qmapper (concat "DROP-SCRIPT-FROM-ON-UNLOAD;" ns ";\n")
+				      (lambda (resp)
+					t)))))))
+
+(defun qmapper-drop-script-from-onload ()
+  (interactive)
+  (query-qmapper "CURRENT-SCRIPT-LIST;ON-LOAD\n"
+		 (lambda (ns-list)
+		   (let ((ns-list (read-from-string ns-list)))
+		     
+		     (let* ((ns (completing-read "Script ns to be removed from current map's on-unload collection: " ns-list nil t)))
+		       (query-qmapper (concat "DROP-SCRIPT-FROM-ONLOAD;" ns ";\n")
+				      (lambda (resp)
+					t)))))))
+
 		 
 
 

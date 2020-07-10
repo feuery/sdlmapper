@@ -66,9 +66,6 @@
 			    (equalp id  layer-id))))
 	 car)))
 	
-
-;; TODO replace this massive map with a qmapper.tools:deftool lookalike
-
 (defparameter *message->event* (map))
 
 (defmacro defmessage (message param-list &rest body)
@@ -186,7 +183,6 @@
 			   (setf chosenlayer amount-of-layers))))))
 
 (defmessage "SELECT-LAYER" (message client-socket params)
-  (format t "params in select-layer: ~a ~%" params)
   (setf *document*
 	(cond ((equalp (length params) 2)
 	       (with-slots* (chosenmap chosenlayer maps) *document*
@@ -289,6 +285,59 @@
       (setf app-state :engine)
       (setf app-state :editor))
   (format t "Started the game"))
+
+(defmessage "ADD-SCRIPT-TO-ONLOAD" (message client-socket params)
+  ;; TODO edit the defmessage macro so that message & client sockets just exist in the macro's scope and params list is actually (destructuring-bind ,params params-list ,@body)
+  (destructuring-bind (ns) params
+    (setf *document* (with-slots* (chosenmap maps) *document*
+		       (setf (nth chosenmap maps) (with-slots* (on-load-scripts) (nth chosenmap maps)
+						      (setf on-load-scripts (cons ns on-load-scripts))))))))
+
+(defmessage "ADD-SCRIPT-TO-ON-UNLOAD" (message client-socket params)
+  (destructuring-bind (ns) params
+    (setf *document* (with-slots* (chosenmap maps) *document*
+		       (setf (nth chosenmap maps) (with-slots* (on-unload-scripts) (nth chosenmap maps)
+						    (setf on-unload-scripts (cons ns on-unload-scripts))))))))
+
+(defmessage "DROP-SCRIPT-FROM-ONLOAD" (message client-socket params)
+  (destructuring-bind (ns) params
+    (setf *document* (with-slots* (chosenmap maps) *document*
+		       (setf (nth chosenmap maps) (with-slots* (on-load-scripts) (nth chosenmap maps)
+						    (setf on-load-scripts (remove-if (lambda (script-ns)
+										       (equalp script-ns ns))
+										     on-load-scripts))))))))
+
+(defmessage "DROP-SCRIPT-FROM-ON-UNLOAD" (message client-socket params)
+  (destructuring-bind (ns) params
+    (setf *document* (with-slots* (chosenmap maps) *document*
+		       (setf (nth chosenmap maps) (with-slots* (on-unload-scripts) (nth chosenmap maps)
+						    (setf on-unload-scripts (remove-if (lambda (script-ns)
+											 (equalp script-ns ns))
+										       on-unload-scripts))))))))
+
+(defmessage "CURRENT-SCRIPT-LIST" (message client-socket params)
+  ;; valid values are "ON-LOAD" and "ON-UNLOAD"
+  (destructuring-bind (on-load?) params
+    (let ((on-load? (equalp on-load? "ON-LOAD")))
+      (with-slots* (chosenmap maps) *document* :read-only
+	(let ((map (nth chosenmap maps)))
+	  
+	  (format (socket-stream client-socket) "~a" (prin1-to-string (if on-load?
+							      (map-on-load-scripts map)
+							      (map-on-unload-scripts map)))))))))
+							  
+      
+
+(defmessage "FULL-NS-LIST" (message client-socket params)
+  (->> *document*
+       root-scripts
+       (mapcar #'script-ns)
+       prin1-to-string
+
+       (format (socket-stream client-socket) "~a~%" )))
+							  
+
+
 
 
 
