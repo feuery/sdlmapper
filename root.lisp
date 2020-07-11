@@ -499,3 +499,47 @@
       (format t "Removing files from ~a~%" input-dir-name)
       (cl-fad:delete-directory-and-files input-dir-name)
       loaded-document)))
+
+(defun eval-map-scripts (doc map onload-key)
+  (assert (or (hash-table-p map)
+	      (fset:map? map)))
+  (assert (equalp (fset:lookup map "TYPE") "MAP"))
+  (assert (or (equalp onload-key :onload)
+	      (equalp onload-key :on-unload)))
+
+  (let* ((script-key (if (equalp onload-key :onload)
+			 "ON-LOAD-SCRIPTS"
+			 "ON-UNLOAD-SCRIPTS"))
+	 (script-keys (fset:lookup map script-key)))
+    (if (listp script-keys)
+	(dolist (ns script-keys)
+	  (let ((script (->> (root-scripts doc)
+			     (remove-if-not (lambda (scr)
+					      (equalp (script-ns scr) ns)))
+			     first)))
+	    (when (and script
+		       (script-contents script))
+	      (let ((to-run (format nil "(progn ~a)" (script-contents script))))
+		(format t "Running: ~a~%" (prin1-to-string to-run))
+		(eval (read-from-string to-run))))))
+	(format t "Ei löydy skriptejä ~a mapista ~a~%" script-key (fset:convert 'fset:map map)))))
+  
+
+
+(defun-export! engine-choose-map (id &key (initial? nil))
+  ;(declaim (optimize (speed 0) (space 0) (debug 3)))
+  (setf *engine-document* (with-slots* (chosenmap maps scripts) *engine-document*
+			    (let ((old-map (nth chosenmap maps)))
+			      (unless initial?
+				(eval-map-scripts *engine-document* old-map :on-unload)))
+			    (setf chosenmap
+				  (->> maps
+				       (position-if (lambda (m)
+						      ;;(format t "(equalp ~a (~a) ~a (~a))~%" (str (fset:lookup m "ID")) (class-of (str (fset:lookup m "ID"))) id (class-of id))
+						      (equalp (fset:lookup m "ID") id)))))
+			    
+			    (assert chosenmap)
+
+			    (let ((new-map (nth chosenmap maps)))
+			      (eval-map-scripts *engine-document* new-map :onload)))))
+			    

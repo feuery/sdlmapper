@@ -281,10 +281,21 @@
 	    (setf scripts (cons (make-script :ns ns) scripts))))))
 
 (defmessage "START-PAUSE-GAME" (message client-socket params)
-  (if (equalp app-state :editor)
-      (setf app-state :engine)
-      (setf app-state :editor))
-  (format t "Started the game"))
+  (with-slots* (maps chosenmap) *document* :read-only
+    (let* ((initial-map (nth chosenmap maps))
+	   (initial-map-id (map-id initial-map)))
+      (cond ((equalp app-state :editor)
+	     ;; starting the game
+	     (format t "Started the game~%")
+	     (setf app-state :engine)
+	     (setf *engine-document* *document*)
+	     (engine-choose-map initial-map-id :initial? t))
+	    
+
+	    ((equalp app-state :engine)
+	     ;; stopping the game
+	     (format t "Stopped the game~%")
+	     (setf app-state :editor))))))
 
 (defmessage "ADD-SCRIPT-TO-ONLOAD" (message client-socket params)
   ;; TODO edit the defmessage macro so that message & client sockets just exist in the macro's scope and params list is actually (destructuring-bind ,params params-list ,@body)

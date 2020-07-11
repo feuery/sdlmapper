@@ -38,11 +38,15 @@
     ))
 
 (defmultimethod render-scene (list :engine :tileset) (renderer root)
-  (format t "Rendering game scene ~%"))
+  (let ((editor-state :map))
+    (render-scene renderer root)))
 
 (defmultimethod render-scene (list :engine :map) (renderer root)
-  (let ((editor-state :tileset))
-    (render-scene renderer root)))
+  ;; root is always *document*
+  ;; thus this architecture is a bit stupid
+  (with-slots* (chosenmap maps) *engine-document* :read-only
+    (let ((map (nth chosenmap maps)))
+      (draw map (fset:map ("RENDERER" renderer))))))
 
 (defmulti handle-drag #'equalp (root x y left-or-right)
   (list app-state editor-state))
