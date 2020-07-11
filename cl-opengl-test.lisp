@@ -77,6 +77,11 @@
 	       (tile (get-in (tileset-tiles (nth chosentileset tilesets)) (list tile-x tile-y))))
 	  (setf chosentile tile)))))
 
+(defun handle-kbd-event (event)
+  (when event
+    (when-let (fn (qmapper.engine_events:get-engine-lambda event))
+      (funcall fn))
+    (handle-kbd-event (queues:qpop qmapper.keyboard_loop:kbd-queue))))
 
 (defun idle (renderer draw-queue)
   (sdl2:render-clear renderer)
@@ -89,6 +94,9 @@
   (sdl2:render-present renderer)
   (sleep 0.002)
 
+  (when (equalp app-state :engine)
+    (handle-kbd-event (queues:qpop qmapper.keyboard_loop:kbd-queue)))
+  
   (dolist (cmd *sdl-single-command-queue*)
     (funcall cmd))
   (setf *sdl-single-command-queue* nil)

@@ -15,3 +15,8 @@
 
 (defun-export! get-engine-lambda (key)
   (lookup *engine-key-map* key))
+
+;; example code
+;; (add-engine-key-fn "C-A" (lambda ()
+;; 			   (format t "You pressed C-a :D ~%")))
+		   
