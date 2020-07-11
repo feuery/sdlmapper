@@ -853,6 +853,16 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 			 tree)))
 	(t tree)))
 
+;; https://rosettacode.org/wiki/String_matching#Common_Lisp
+(defun-export! substring? (str1 str2)
+  "Determine whether `str1` contains `str2`.
+   Instead of just returning T, return a list of starting locations
+   for every occurence of `str2` in `str1`"
+   (unless (string-equal str2 "")
+     (loop for p = (search str2 str1) then (search str2 str1 :start2 (1+ p))
+           while p 
+           collect p)))
+
 ;; TODO write a real test about this
 ;; (walk-and-transform (lambda (leave)
 ;; 		      (and (fset:map? leave)

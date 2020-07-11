@@ -3,7 +3,7 @@
 	:cl-arrows
 	:qmapper.export
 	:qmapper.std)
-  (:export :dragged-table :app-state :*renderer* :editor-state))
+  (:export :dragged-table :app-state :*renderer* :*window* :editor-state))
 
 (in-package :qmapper.app-state)
 
@@ -20,6 +20,7 @@
 
 (defvar *renderer* nil
   "Contains the renderer used by sdl when doing image things")
+(defvar *window* nil)
 
 (defun-export! correct-document ()
   (if (equalp app-state :editor)

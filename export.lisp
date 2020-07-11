@@ -83,4 +83,4 @@
 
 (defvar-export! pop_kbd nil)
 (defun-export! pop-kbd ()
-  (funcall pop_kbd))
+  nil)

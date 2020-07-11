@@ -10,7 +10,15 @@
 
 (in-package :qmapper.keyboard_loop)
 
+(defvar-export! kbd-queue (queues:make-queue :simple-queue))
 (defvar-export! *kbd-loop-running?* t)
+
+(defun dump-queue (first-element)
+  (when first-element
+    (format t "~a~%" first-element)
+    (dump-queue (queues:qpop kbd-queue))))
+
+;;(dump-queue (queues:qpop kbd-queue))
 
 (defun kbd-loop ()
   (while *kbd-loop-running?*
@@ -25,4 +33,4 @@
 (defun-export! start-kbd-loop! ()
   (make-thread #'kbd-loop :name "Keyboard thread"))
 	  
-;; (start-kbd-loop!)
+(start-kbd-loop!)

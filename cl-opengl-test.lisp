@@ -111,7 +111,49 @@
 
 (defun stop-drag ()
   (setf dragged-table nil))
-  
+
+(defvar ctrl-down? nil)
+(defvar alt-down? nil)
+(defvar shift-down? nil)
+
+(defun handle-kbd (keysym)
+  (when (equalp app-state :engine)
+    (let* ((scancode (sdl2:scancode-value keysym))
+	   (sym (sdl2:sym-value keysym))
+	   (mod-value (sdl2:mod-value keysym))
+	   (name (sdl2:scancode-key-name scancode)))
+
+      
+      (cond ((substring? name "Ctrl") (setf ctrl-down? (not ctrl-down?)))
+	    ((substring? name "Alt") (setf alt-down? (not alt-down?)))
+	    ((substring? name "Shift") (setf shift-down? (not shift-down?)))
+	    (t (queues:qpush qmapper.keyboard_loop:kbd-queue (format nil "~a~a~a~a"
+								     (if ctrl-down? "C-" "")
+								     (if alt-down? "M-" "")
+								     (if shift-down? "S-" "")
+								     name))))
+      
+      
+      (format t "Key sym: ~a, code: ~a, mod: ~a, name: ~a~%"
+	      sym
+	      scancode
+	      mod-value
+	      name
+	      ))))
+
+(defun handle-windowevent ()
+  (let ((flags (sdl2:get-window-flags *window*)))
+    ;; haaaack
+    (if (or (position :mouse-focus flags)
+	    (position :input-focus flags))
+	(progn
+	  ;;got focus
+	  (format t "We have a focus!~%"))
+	(progn
+	  ;;lost focus
+	  (setf ctrl-down? nil
+		alt-down? nil
+		shift-down? nil)))))
 
 (defun event-loop (renderer)
   ;;(push (qmapper.obj:create-sprite :texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer renderer) *draw-queue*)
@@ -119,17 +161,7 @@
   ;;   (push (qmapper.obj:create-sprite :texture-path "/home/feuer/Sync/qt-test/kaunis_tileset.jpeg" :renderer *renderer*) *draw-queue*))
   (sdl2:with-event-loop (:method :poll)
     (:keydown (:keysym keysym)
-	      (let ((scancode (sdl2:scancode-value keysym))
-		    (sym (sdl2:sym-value keysym))
-		    (mod-value (sdl2:mod-value keysym)))
-		(cond
-		  ((sdl2:scancode= scancode :scancode-w) (format t "~a~%" "WALK"))
-		  ((sdl2:scancode= scancode :scancode-s) (sdl2:show-cursor))
-		  ((sdl2:scancode= scancode :scancode-h) (sdl2:hide-cursor)))
-		(format t "Key sym: ~a, code: ~a, mod: ~a~%"
-			sym
-			scancode
-			mod-value)))
+	      (handle-kbd keysym))
 
     (:keyup (:keysym keysym)
 	    (when (sdl2:scancode= (sdl2:scancode-value keysym) :scancode-escape)
@@ -139,6 +171,9 @@
 		      (start-drag *document*))
     (:mousebuttonup ()
 		    (stop-drag))
+
+    (:windowevent () 
+		  (handle-windowevent))
 
     (:mousemotion (:x x :y y)
 		  (handler-case 
@@ -176,6 +211,7 @@
 	(sdl2:set-render-draw-color renderer 255 0 0 255)
 	(sdl2:set-render-draw-blend-mode renderer sdl2-ffi:+SDL-BLENDMODE-BLEND+)
 	(setf *renderer* renderer)
+	(setf *window* win)
 	(event-loop renderer)))))
 
 ;; (main)
