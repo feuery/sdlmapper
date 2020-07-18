@@ -297,35 +297,29 @@
 ;; 	'(1 1 2)
 ;; 	:LOL)
 
-(defun-export! get-prop  (obj-alist key)
-  (handler-case 
-      (let ((obj-alist (if (or (listp obj-alist)
-			       (consp obj-alist))
-			   (convert 'seq obj-alist)
-			   obj-alist)))
-	(if (numberp key)
-	    (lookup obj-alist key)
-	    (progn
-	      (let* ((key (clean-key key))
-		     (real-alist (convert 'list obj-alist))
-		     (result (cdr (assoc key real-alist :test #'string=)))
-		     (result (cond ((equalp result t) result)
-				   ((and result
-					 (symbolp result))
-				    ;; if not for the prin1, this'd return rubbish strings to c...
-				    (prin1-to-string (symbol-name result)))
-				   (t result))))
-		;; (when (equalp result (empty-seq))
-		;;   (format t "WARN: returning empty seq for ~a~%" key))
-		(values result
-			key)))))
-    (SIMPLE-ERROR (e)
-      (format t "Kutsutaan ~a~%" (list 'get-prop obj-alist key))
-      (error e))))
+(defun-export! get-prop  (obj key)
+  (cond ((fset:map? obj)
+	 (fset:lookup obj key))
+	((listp obj)
+	 (nth key obj))
+	((hash-table-p obj)
+	 (gethash key obj))
+	(t
+	 (format t "~a is neither hashtable, list nor fset map~%" obj)
+	 (assert (or (fset:map? obj)
+		     (hash-table-p obj)
+		     (listp obj))))))
 
 (defun-export! dissoc-prop (obj-alist key)
   (assert obj-alist)
   (fset:less obj-alist key))
+
+(defun-export! set-prop (obj k v)
+  (cond ((fset:map? obj)
+	 (with obj k v))
+	((listp obj)
+	 (setf (nth k obj) v)
+	 obj)))
 
 (defun-export! dissoc-prop-in (obj-alist ks)
   (let* ((key (car ks))
@@ -444,6 +438,8 @@
 	((listp obj)
 	 (setf (nth key obj) val)
 	 obj)
+	((hash-table-p obj)
+	 (set-prop (convert 'map obj) key val))
 	(t
 	 (error "set-prop supports only fset:maps, fset:seqs and lisp's lists"))))
 

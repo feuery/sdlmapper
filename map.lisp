@@ -201,7 +201,7 @@
 						   (tile (if sprite
 							     tile
 							     (if (tile-tileset tile)
-								 (when-let (tile (fetch-tile-from-tileset (nth (tile-tileset tile) (root-tilesets *document*))
+								 (when-let (tile (fetch-tile-from-tileset (nth (tile-tileset tile) (root-tilesets *local-document*))
 													  (tile-x tile)
 													  (tile-y tile)))
 								   tile))))
@@ -241,6 +241,7 @@
 				     70)))))
 
 	(dolist (sprite sprites)
+;;	  (format t "Rendering sprite ~a~%" sprite)
 	  (draw sprite (fset:map ("RENDERER" renderer))))
       	
 

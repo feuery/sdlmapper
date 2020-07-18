@@ -28,7 +28,7 @@
 	  (dolist (key-str keys-down)
 	    (if-let (engine-lambda (get-engine-lambda key-str))
 	      (funcall engine-lambda)))))
-    (ms-sleep 2)))
+    (sleep 0.002)))
 
 (defun-export! start-kbd-loop! ()
   (make-thread #'kbd-loop :name "Keyboard thread"))

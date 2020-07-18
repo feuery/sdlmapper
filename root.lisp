@@ -351,12 +351,7 @@
   (assert (not (functionp doc)))
   (assert doc)
 
-  (setf *engine-document* doc)
-  ;; (dolist (l *document-hooks*)
-  ;;   (if (and l
-  ;; 	     (functionp l))
-  ;; 	(funcall l doc)))
-  )
+  (setf *engine-document* doc))
 
 
 
@@ -420,6 +415,9 @@
 	 (list m));)
 	((fset:map? m)
 	 (rutil:mapcat #'find-sdl-objs (vals m)))))
+
+;; (save-doc! *document* #P"/home/feuer/skriptitesti.sdlmap")
+
 
 (defun-export! save-doc! (doc path)
   ;; ensin puhdistetaan clean-hashmaps:illa
@@ -542,4 +540,3 @@
 
 			    (let ((new-map (nth chosenmap maps)))
 			      (eval-map-scripts *engine-document* new-map :onload)))))
-			    

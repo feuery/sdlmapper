@@ -76,11 +76,6 @@
   nil ;; (funcall render dst img)
   )
 
-(defvar-export! c_sleep nil);
-(defun-export! ms-sleep (ms)
-  (if c_sleep
-      (funcall c_sleep ms)))
-
 (defvar-export! pop_kbd nil)
 (defun-export! pop-kbd ()
   nil)

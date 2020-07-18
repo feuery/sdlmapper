@@ -288,6 +288,8 @@
 	     ;; starting the game
 	     (format t "Started the game~%")
 	     (setf app-state :engine)
+	     ;; let's freeze *document* as immutable map
+	     (setf *document* (clean-hashmaps *document*))
 	     (setf *engine-document* *document*)
 	     (engine-choose-map initial-map-id :initial? t))
 	    

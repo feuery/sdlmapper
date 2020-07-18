@@ -41,7 +41,7 @@
 									 (-> sprite
 									     (update-prop "X" (partial #'+ x))
 									     (update-prop "Y" (partial #'+ y)))))))))))
-    (ms-sleep 2)))
+    (sleep 0.002)))
 
 (defun-export! start-gravity-loop! ()
   (setf *gravity-loop-running?* t)

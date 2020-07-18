@@ -39,16 +39,14 @@
 (defmulti draw #'equalp (drawable args)
   (fset:lookup drawable "TYPE"))
 
-
 (defmultimethod draw "obj" (obj args)
   (let ((renderer (fset:lookup args "RENDERER")))
     (with-slots* (position texture size opacity obj-angle) obj
-		 ;; (format t "Drawing obj sprite at ~a~%" position)
-		 (sdl2:with-rects ((dst-rect (car position) (cadr position)
-					     (car size) (cadr size)))
-		   (sdl2:set-texture-alpha-mod texture  opacity)
-		   (sdl2:render-copy-ex renderer texture :dest-rect dst-rect
-					:angle obj-angle)))))
+      (sdl2:with-rects ((dst-rect (car position) (cadr position)
+				  (car size) (cadr size)))
+	(sdl2:set-texture-alpha-mod texture  opacity)
+	(sdl2:render-copy-ex renderer texture :dest-rect dst-rect
+					      :angle obj-angle)))))
 
 (defun xor (&rest args)
   (flet ((xor2 (a b) (not (eq (not a) (not b)))))
