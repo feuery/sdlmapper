@@ -92,10 +92,18 @@
   (format (socket-stream client-socket) "~a~%"
 	  (with-slots* (qmapper.root:maps) *document* :read-only
 	    (rutil:mapcat (lambda (map)
-			    (mapcar (lambda (sprite)
-				      (list (prin1-to-string (sprite-id sprite))
-					    (prin1-to-string (sprite-name sprite))))
-				    (map-sprites map)))
+			    (concatenate 'list
+			     (mapcar (lambda (sprite)
+				      (list (prin1-to-string (fset:lookup sprite "ID"))
+					    (prin1-to-string (fset:lookup sprite "NAME"))
+					    (prin1-to-string (fset:lookup sprite "TYPE"))))
+				     (map-sprites map))
+
+			     (mapcar (lambda (sprite)
+				      (list (prin1-to-string (fset:lookup sprite "ID"))
+					    (prin1-to-string (fset:lookup sprite "NAME"))
+					    (prin1-to-string (fset:lookup sprite "TYPE"))))
+				    (map-animatedsprites map))))
 			  qmapper.root:maps))))
 
 (defmessage "CREATE-MAP" (message client-socket params)

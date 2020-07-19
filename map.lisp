@@ -244,9 +244,9 @@
 ;;	  (format t "Rendering sprite ~a~%" sprite)
 	  (draw sprite (fset:map ("RENDERER" renderer))))
       	
-
+	;;(format t "animations: ~a~%" (clean-hashmaps animations))
 	(dolist (animation animations)
-	  (draw animation (fset:map ("RENDERER" renderer))))))))
+	  (draw (clean-hashmaps animation) (fset:map ("RENDERER" renderer))))))))
 
 (defun-export! select-map-layer (root map-id layer-id)
   ;;(clear-lisp-dq :MAP)

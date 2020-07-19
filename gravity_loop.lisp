@@ -2,6 +2,7 @@
   (:use :common-lisp
 	:qmapper.std
 	:qmapper.engine_events
+	:qmapper.animatedsprite
 	:qmapper.app-state 
 	:qmapper.root
 	:qmapper.map
@@ -29,7 +30,15 @@
 									   (with-slots* (gravity-vector x y) sprite
 									     (setf x (+ x (first gravity-vector))
 										   y (+ y (second gravity-vector))))
-									   sprite)))))))
+									   sprite))))
+			     (update-prop "ANIMATEDSPRITES" (partial #'mapcar (lambda (animatedsprite)
+										(if (animatedsprite-gravity-enabled animatedsprite)
+										    (progn (format t "Updating animatedsprite gravity~%")
+											   (with-slots* (gravity-vector x y) animatedsprite
+											     (setf x (+ x (first gravity-vector))
+												   y (+ y (second gravity-vector)))))
+										    (progn (format t "not updating animatedsprite gravity~%")
+											   animatedsprite))))))))
 		(setf (nth chosenmap maps) map)))))
     (sleep 0.5))
   (format t "Stopping gravity loop~%"))

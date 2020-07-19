@@ -540,3 +540,8 @@
 
 			    (let ((new-map (nth chosenmap maps)))
 			      (eval-map-scripts *engine-document* new-map :onload)))))
+
+;; (-> *document*
+;;     root-maps
+;;     first
+;;     qmapper.map:map-animatedsprites)

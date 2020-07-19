@@ -12,14 +12,14 @@
 (defvar qmapper-editor-port 3003
   "QMapper's editor server's port")
  
-;; (progn (qmapper-load-tileset "/tangorauta/projects/qt-test/kaunis_tileset.jpeg" "nätti") 
-;;        (qmapper-new-map 10 10)
-;;        (qmapper-list-maps)
-;;        (qmapper-load-sprite "/tangorauta/projects/qt-test/meikä on sprite.jpg" "Meikä = sprite")
-;;        (qmapper-load-animation "/tangorauta/projects/qt-test/kaunis_tileset.jpeg" 4 "ani maatio")
-;;        (qmapper-list-tools)
-;;        (qmapper-new-script "initialisointi")
-;;        (qmapper-add-script-to-onload))
+(progn (qmapper-load-tileset "/tangorauta/projects/qt-test/kaunis_tileset.jpeg" "nätti") 
+       (qmapper-new-map 10 10)
+       (qmapper-list-maps)
+       (qmapper-load-sprite "/tangorauta/projects/qt-test/meikä on sprite.jpg" "Meikä = sprite")
+       (qmapper-load-animation "/tangorauta/projects/qt-test/kaunis_tileset.jpeg" 4 "ani maatio")
+       (qmapper-list-tools)
+       (qmapper-new-script "initialisointi")
+       (qmapper-add-script-to-onload))
 
 (defun qmapper-connect-editor (server)
   "This function sets the ip where you're running qmapper"
