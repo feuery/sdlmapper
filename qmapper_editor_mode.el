@@ -113,7 +113,8 @@
 		 (lambda (prop-names)
 		   (let* ((prop-names (car (read-from-string prop-names)))
 			  (name (completing-read "Property name: " prop-names nil t))
-			  (visible-prop (string= name "VISIBLE"))
+			  (visible-prop (or (string= name "VISIBLE")
+					    (string= name "GRAVITY-ENABLED")))
 			  (value (if (not visible-prop)
 				     (read-string "Property value: "))))
 		     (if visible-prop
@@ -148,6 +149,16 @@
 															(lambda (&rest rst)
 															  (message "Selected layer")))))))))))
 
+(defun qmapper-list-objects (map-id)
+  (query-qmapper (concat "LIST-OBJECTS;" map-id ";\n")
+		 (query-lambda :lambdas-to-run-inside-buffer (list (lambda ()
+								     (use-local-map (copy-keymap qmapper-visual-mode-map))
+								     (local-set-key "s" (lambda ()
+											  (interactive)
+											  (qmapper-set-value "SPRITE" (qmapper-selected-row-id)
+													     (lambda ()
+													       (quit-window)
+													       (qmapper-list-objects map-id))))))))))
 (defun qmapper-list-maps ()
   (interactive)
   (query-qmapper "LIST-MAPS;\n"
@@ -169,6 +180,11 @@
 													     (lambda ()
 													       (quit-window)
 													       (qmapper-list-maps)))))
+
+								     (local-set-key "o" (lambda ()
+											  (interactive)
+											  (let ((id (qmapper-selected-row-id)))
+											    (qmapper-list-objects id))))
 											  
 								     (local-set-key "c" (lambda ()
 											  (interactive)

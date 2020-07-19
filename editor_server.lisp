@@ -87,6 +87,17 @@
 				 (list (prin1-to-string (map-id map))
 				       (prin1-to-string (map-name map))))
 			       qmapper.root:maps))))
+
+(defmessage "LIST-OBJECTS"  (message client-socket params)
+  (format (socket-stream client-socket) "~a~%"
+	  (with-slots* (qmapper.root:maps) *document* :read-only
+	    (rutil:mapcat (lambda (map)
+			    (mapcar (lambda (sprite)
+				      (list (prin1-to-string (sprite-id sprite))
+					    (prin1-to-string (sprite-name sprite))))
+				    (map-sprites map)))
+			  qmapper.root:maps))))
+
 (defmessage "CREATE-MAP" (message client-socket params)
   (let ((map-w (parse-integer (car params)))
 	(map-h (parse-integer (cadr params))))
