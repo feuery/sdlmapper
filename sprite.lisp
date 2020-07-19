@@ -8,7 +8,7 @@
 	:qmapper.tileset
 	:qmapper.root
 	:qmapper.obj)
-  (:export :update-map-sprite :init-sprite :set-angle :qsprite :sprite-x :sprite-y :set-pos :get-pos :sprite-angle))
+  (:export :sprite-gravity-enabled :update-map-sprite :init-sprite :set-angle :qsprite :sprite-x :sprite-y :set-pos :get-pos :sprite-angle))
 
 (in-package :qmapper.sprite)
 
@@ -34,19 +34,20 @@
 
 ;; this could probs be replaced with qmapper.obj:sprite?
 (defclass* sprite
-  (x 0) ;; validator #'validate-x)
-   (y 0) ;; validator #'validate-y)
-   (angle 0) ;; validator 0.0)
-  (id (random 99999))
-   (gravity-vector #[0 1] ;; (lambda (g)
-		   ;;   (and (fset:seq? g)
-		   ;; 	    (every #'numberp (fset:convert 'list g))))
-		   )
-   (visible  t)
-   ;;(parentMapId :initarg :parentMapId :accessor sprite-parentMapId :initform "")
-   (name  "")
-   ;;(loadingDone :initarg :loadingDone :accessor sprite-loadingDone :initform nil)
-   (obj-sprite :not-loaded-correctly))
+    (x 0) ;; validator #'validate-x)
+    (y 0) ;; validator #'validate-y)
+    (angle 0) ;; validator 0.0)
+    (id (random 99999))
+    (gravity-vector #[0 1] ;; (lambda (g)
+		    ;;   (and (fset:seq? g)
+		    ;; 	    (every #'numberp (fset:convert 'list g))))
+		    )
+    (gravity-enabled nil)
+    (visible  t)
+    ;;(parentMapId :initarg :parentMapId :accessor sprite-parentMapId :initform "")
+    (name  "")
+    ;;(loadingDone :initarg :loadingDone :accessor sprite-loadingDone :initform nil)
+    (obj-sprite :not-loaded-correctly))
 
 (defmultimethod set-pos "sprite" (sprite new-x new-y &key)
   (with-slots* (x y) sprite

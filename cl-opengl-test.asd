@@ -93,6 +93,10 @@
 			     "tileset"
 			     "map"
 			     "doc-server"))
+	       (:file "gravity_loop"
+		:depends-on ("qmapper_std"
+			     "engine_events"
+			     "root"))
 	       (:file "selection-tool"
 		:depends-on ("qmapper_std"
 			     "export"
