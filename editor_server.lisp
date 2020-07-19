@@ -274,16 +274,19 @@
 (defmessage "LOAD-ANIMATION" (message client-socket params)
   (destructuring-bind (path framecount name) params
     (schedule-once (lambda ()
-		     (let ((chosen-map (root-get-chosen-map *document*)))
-		       (setf chosen-map
-			     (with-slots* (qmapper.map:animatedsprites) chosen-map
-					  (push
-					   (-> (make-animatedsprite)
-					       (init-animated-sprite
-						:path path
-						:framecount (parse-integer framecount)
-						:renderer *renderer*))
-					   animatedsprites))))))))
+		     (setf *document*
+			   (with-slots* (qmapper.root:maps qmapper.root:chosenmap qmapper.root:chosenlayer) *document*
+			     (let* ((chosen-map (nth chosenmap maps)))
+			       (setf chosen-map
+				     (with-slots* (qmapper.map:animatedsprites) chosen-map
+				       (push
+					(-> (make-animatedsprite)
+					    (init-animated-sprite
+					     :path path
+					     :framecount (parse-integer framecount)
+					     :renderer *renderer*))
+					animatedsprites)))
+			       (setf (nth chosenmap maps) chosen-map))))))))
 
 (defmessage "CREATE-SCRIPT" (message client-socket params)
   (destructuring-bind (ns) params
