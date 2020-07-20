@@ -689,6 +689,14 @@ by setting this var to nil and killing every process on the way. TODO make a bet
                 :initial-value (apply fn1 args)))))
 
 (defvar class->props (fset:empty-map))
+(defvar validators (fset:empty-map))
+
+(defun-export! fn-list? (fn)
+  (or (functionp fn)
+      (and (listp fn)
+	   (or (equalp (first fn) 'lambda)
+	       (equalp (first fn) 'function))
+	   (functionp (eval fn)))))
 
 (defmacro defclass* (class-name &rest slot-val-tags-triplets)
   (unless (car slot-val-tags-triplets)
@@ -711,14 +719,27 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 				      (export ',getter-name)))))))
 	 (non-serializables (->> slot-val-tags-triplets
 				 (remove-if-not (lambda (tripl)
-						  (let ((tags (third tripl)))
-						    (when tags
+						  (let ((tags (first (remove-if-not #'listp (drop tripl 2)))))
+						    (when (and tags
+							       (every #'symbolp tags))
 						      (position 'nonserializable tags :test #'string=)))))
 				 (mapcar (compose #'prin1-to-string #'first))
-				 (cons 'list))))
+				 (cons 'list)))
+	 (slot->validator (reduce (lambda (map slot-triplet)
+				    (let ((slot-name (first slot-triplet))
+					  (validator (first (remove-if-not #'fn-list? slot-triplet))))
+				      (fset:with map (prin1-to-string slot-name) validator)))
+				    
+				  (remove-if-not (lambda (tripl)
+						   (any? #'fn-list? 
+							 (last tripl 2)))
+						 slot-val-tags-triplets)
+			   :initial-value (fset:empty-map))))
     ;; tää laittaa ne propsut tonne class->propsiin
     ;; sitten GET-PROPS editor_serverissä kattoo ne propsut täältä
     (setf class->props (fset:with class->props (symbol-name class-name) slots))
+    (unless (fset:empty? slot->validator)
+      (setf validators (fset:with validators (prin1-to-string class-name) slot->validator)))
     `(progn
        ,@getters
        (defun-export! ,ctr-name ,ctr-params
@@ -727,7 +748,10 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 	  ("NONSERIALIZABLES" ,non-serializables)
 	  ,@(mapcar (lambda (slot-val)
 		      (list (prin1-to-string slot-val) slot-val))
-		    slots))))))
+		    slots)))
+       ;; sanity check that makes sure reflection towards emacs api works
+       (assert (fset:lookup class->props ,(prin1-to-string class-name))))))
+
 (export 'defclass*)
 ;; (defclass* lol
 ;;     (slot-1 "AAA")

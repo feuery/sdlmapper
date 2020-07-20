@@ -77,8 +77,7 @@
 		(setf position (list x y)
 		      obj-angle angle)
 		(assert (hash-table-p obj-sprite2))
-		(let ((qmapper.obj:*log?* t))
-		  (draw obj-sprite2 (fset:map ("RENDERER" renderer))))))))))
+		(draw obj-sprite2 (fset:map ("RENDERER" renderer)))))))))
 
 (defmulti update-map-sprite #'equalp (map new-sprite)
   (fset:lookup new-sprite "TYPE"))
