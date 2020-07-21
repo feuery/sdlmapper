@@ -8,11 +8,8 @@
 
 (in-package #:qmapper.obj)
 
-(defun every-num? (new-pos)
-  (every #'numberp new-pos))
-
 (defclass* obj
-    (position nil #'every-num?)
+    (position nil (lambda (new-pos) (every #'numberp new-pos)))
    ;; in pixels
    (size nil)
    ;; in degrees
