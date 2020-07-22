@@ -36,6 +36,13 @@
 	  opacity 255)
     (sdl2:set-texture-blend-mode texture :blend)))
 
+;; this blows up in the validator :D
+;; (fset:convert 'fset:map
+;; 	      (let ((obj (make-obj)))
+;; 		(with-slots* (position) obj
+;; 		  (setf position (list 1 2 "LOL :D")))))
+
+
 (defmulti draw #'equalp (drawable args)
   (fset:lookup drawable "TYPE"))
 

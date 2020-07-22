@@ -1,6 +1,6 @@
 (defpackage :qmapper.std
   (:use :common-lisp :cl-arrows)
-  (:export :class->props :get-ms-time :class-props :class-props-str)
+  (:export :class->props :get-ms-time :class-props :class-props-str :validators)
   (:import-from :qmapper.export :defmacro-export! :defun-export! :defvar-export!)
   (:import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable)
   (:import-from :cl-ppcre :regex-replace-all :create-scanner :scan :parse-string)
@@ -689,7 +689,7 @@ by setting this var to nil and killing every process on the way. TODO make a bet
                 :initial-value (apply fn1 args)))))
 
 (defvar class->props (fset:empty-map))
-(defvar validators (fset:empty-map))
+(defvar-export! validators (fset:empty-map))
 
 (defun-export! fn-list? (fn)
   (or (functionp fn)
@@ -728,7 +728,7 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 	 (slot->validator (reduce (lambda (map slot-triplet)
 				    (let ((slot-name (first slot-triplet))
 					  (validator (first (remove-if-not #'fn-list? slot-triplet))))
-				      (fset:with map (prin1-to-string slot-name) validator)))
+				      (fset:with map (prin1-to-string slot-name) (eval validator))))
 				    
 				  (remove-if-not (lambda (tripl)
 						   (any? #'fn-list? 
@@ -759,11 +759,16 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 
 ;; (lol-slot-1 (make-lol))
 
+(define-condition validator-failed (error)
+  ((text :initarg :text :reader text)))
+
 (defmacro with-slots* (slots obj &rest body)
   "with-slots lookalike that lets you setf fields inside immutable fset maps. It has some issues with composing multiple with-slots*'s. Macro returns a new fset map with modified keys, unless first form of body is equalp to :read-only, in which case it returns whatever body returns"
   (let ((obj-sym (if (symbolp obj)
 		     obj
 		     (gensym)))
+	(type-sym (gensym))
+	(validators-sym (gensym))
 	(read-only? (equalp (car body) :read-only))
 	(force-convert-to-fset? (equalp (car body) :force-fset)))
     (if read-only?
@@ -776,20 +781,29 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 			      body))
 		     slots
 		     :initial-value body))
-	`(let ((,obj-sym (if (hash-table-p ,obj)
-			     ,obj
-			     (fset:convert 'hash-table ,obj :test #'equalp))))
+
+	
+	`(let* ((,obj-sym (if (hash-table-p ,obj)
+			      ,obj
+			      (fset:convert 'hash-table ,obj :test #'equalp)))
+		(,type-sym (fset:lookup ,obj-sym "TYPE"))
+		(,validators-sym (fset:lookup qmapper.std:validators ,type-sym)))
 	   ,@(reduce (lambda (body slot)
-		       (subst `(gethash ,(symbol-name slot) ,obj-sym)
-			      slot
-			      body))
+		       (->> body						       
+			    (subst `(gethash ,(symbol-name slot) ,obj-sym)
+				   slot)))
 		     slots
 		     :initial-value body)
+	   (when ,validators-sym
+	     (fset:do-map (prop-name val (fset:convert 'map ,obj-sym))
+	       (if-let (validator (fset:lookup ,validators-sym prop-name))
+		 (if (not (funcall validator val))
+		     (error 'validator-failed)))))
 	   (if (or (not (hash-table-p ,obj))
 		   ,force-convert-to-fset?)
 	       (fset:convert 'map ,obj-sym)
 	       ,obj-sym)))))
-
+	   
 (defmethod fset:lookup ((collection hash-table) key)
   (gethash key collection :not-found))
 
