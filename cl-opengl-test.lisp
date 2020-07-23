@@ -225,20 +225,9 @@
 ;; (main)
 
 ;; example/test code for loading a project
-(schedule-once (lambda ()
-		 (setf *document*
-		       (load-doc! #P"/home/feuer/skriptitesti.sdlmap" *renderer*))))
-
-
-;; (-> *document*
-;;      root-maps
-;;      first
-;;      map-animatedsprites
-;;      first
-;;      clean-hashmaps
-;;      (fset:lookup "GRAVITY-ENABLED"))
-
-    
+;; (schedule-once (lambda ()
+;; 		 (setf *document*
+;; 		       (load-doc! #P"/home/feuer/skriptitesti.sdlmap" *renderer*))))
 
 ;; (setf *document* (qmapper.root:init-root!))
 

@@ -33,11 +33,11 @@
 									   sprite))))
 			     (update-prop "ANIMATEDSPRITES" (partial #'mapcar (lambda (animatedsprite)
 										(if (animatedsprite-gravity-enabled animatedsprite)
-										    (progn (format t "Updating animatedsprite gravity~%")
+										    (progn ;(format t "Updating animatedsprite gravity~%")
 											   (with-slots* (gravity-vector x y) animatedsprite
 											     (setf x (+ x (first gravity-vector))
 												   y (+ y (second gravity-vector)))))
-										    (progn (format t "not updating animatedsprite gravity~%")
+										    (progn ;(format t "not updating animatedsprite ~a gravity~%" (fset:convert 'fset:map animatedsprite))
 											   animatedsprite))))))))
 		(setf (nth chosenmap maps) map)))))
     (sleep 0.5))

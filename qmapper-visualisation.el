@@ -4,6 +4,12 @@
   (list (random)
 	(apply #'vector (mapcar #'prin1-to-string row))))
 
+(defun qmapper-selected-row-type ()
+  "Probably works only on objects"
+  (aref (cadr (assoc (tabulated-list-get-id)
+		     tabulated-list-entries))
+	2))
+
 (defun qmapper-selected-row-id ()
   (aref 
    (cadr

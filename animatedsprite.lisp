@@ -9,7 +9,7 @@
         :qmapper.std
 	:qmapper.export
         :qmapper.root)
-  (:export animatedsprite :animatedsprite-gravity-enable :animatedsprite-gravity-vector))
+  (:export animatedsprite :animatedsprite-gravity-enabled :animatedsprite-gravity-vector))
 
 (in-package :qmapper.animatedsprite)
 
@@ -42,46 +42,44 @@
   (with-slots* (angle) sprite
     (setf angle an)))
 
-;; jännästi tää ei toimi ku pitäisi päivitellä *engine-documentia* :DDDDD
 (defmultimethod draw "animatedsprite" (animation args)
-  ;; TODO this messing around with sprite index does not in fact belong in the drawing function
   (if (equalp app-state :editor)
       (setf *document*
 	    (with-slots* (qmapper.root:maps qmapper.root:chosenmap qmapper.root:chosenlayer) *document*
 	      (let ((the-maps maps))
-		(setf (nth chosenmap the-maps)
-		      (let* ((map (nth chosenmap maps))
-			     (renderer (fset:lookup args "RENDERER"))				
-			     (animation-index (position animation (clean-hashmaps (fset:lookup map "ANIMATEDSPRITES")) :test #'equalp)))
-			(when animation-index
-			  (with-slots* (animatedsprites) map
-			    ;;(format t "(nth ~a ~a)~%" animation-index animatedsprites)
-			    (setf (nth animation-index animatedsprites)
-				  (with-slots* (sprites x y currentframeid angle ) (-> animation
-										       animatedsprite-advanceframeifneeded!)
-				    (setf (nth currentframeid sprites)
-					  (with-slots* (position) (set-sprite-angle (nth currentframeid sprites) angle)
-					    (setf position (list x y))
-					    (draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer)))))))))))
-		(setf qmapper.root:maps the-maps))))
+	      	(setf (nth chosenmap the-maps)
+	      	      (let* ((map (nth chosenmap maps))
+	      		     (renderer (fset:lookup args "RENDERER"))				
+	      		     (animation-index (position animation (clean-hashmaps (fset:lookup map "ANIMATEDSPRITES")) :test #'equalp)))
+	      		(if animation-index
+	      		  (with-slots* (animatedsprites) map
+	      		    (setf (nth animation-index animatedsprites)
+	      			  (with-slots* (sprites x y currentframeid angle ) (-> animation
+	      									       animatedsprite-advanceframeifneeded!)
+	      			    (setf (nth currentframeid sprites)
+	      				  (with-slots* (position) (set-sprite-angle (nth currentframeid sprites) angle)
+	      				    (setf position (list x y))
+	      				    (draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))
+			  map)))
+		(assert (not (null (first the-maps))))
+	      	(setf qmapper.root:maps the-maps))))
       (setf *engine-document*
-	    (with-slots* (maps chosenmap chosenlayer) *engine-document*
+	    (with-slots* (maps chosenmap chosenlayer) *engine-document*	      
 	      (let ((the-maps maps))
-		(setf (nth chosenmap the-maps)
-		      (let* ((map (nth chosenmap maps))
-			     (renderer (fset:lookup args "RENDERER"))
-			     ;;(_ (format t "the anim and all anims: ~a~%" (list animation (fset:lookup map "ANIMATEDSPRITES"))))
-			     (animation-index (position animation (clean-hashmaps (fset:lookup map "ANIMATEDSPRITES")) :test #'equalp)))
-			(with-slots* (animatedsprites) map
-			  ;;(format t "(nth ~a ~a)~%" animation-index animatedsprites)
-			  (setf (nth animation-index animatedsprites)
-				(with-slots* (sprites x y currentframeid angle ) (-> animation
-										     animatedsprite-advanceframeifneeded!)
-				  (setf (nth currentframeid sprites)
-					(with-slots* (position) (set-sprite-angle (nth currentframeid sprites) angle)
-					  (setf position (list x y))
-					  (draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))))
-		(setf qmapper.root:maps the-maps))))))
+	      	(setf (nth chosenmap the-maps)
+	      	      (let* ((map (nth chosenmap maps))
+	      		     (renderer (fset:lookup args "RENDERER"))
+	      		     (animation-index (position animation (clean-hashmaps (fset:lookup map "ANIMATEDSPRITES")) :test #'equalp)))
+	      		(with-slots* (animatedsprites) map
+	      		  (setf (nth animation-index animatedsprites)
+	      			(with-slots* (sprites x y currentframeid angle ) (-> animation
+	      									     animatedsprite-advanceframeifneeded!)
+	      			  (setf (nth currentframeid sprites)
+	      				(with-slots* (position) (set-sprite-angle (nth currentframeid sprites) angle)
+	      				  (setf position (list x y))
+	      				  (draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))))
+		(assert (not (null (first the-maps))))
+	      	(setf qmapper.root:maps the-maps))))))
 
 (defmultimethod set-pos "animatedsprite" (animation new-x new-y)
   (with-slots* (x y) animation

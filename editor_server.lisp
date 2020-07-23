@@ -96,13 +96,13 @@
 			     (mapcar (lambda (sprite)
 				      (list (prin1-to-string (fset:lookup sprite "ID"))
 					    (prin1-to-string (fset:lookup sprite "NAME"))
-					    (prin1-to-string (fset:lookup sprite "TYPE"))))
+					    (fset:lookup sprite "TYPE")))
 				     (map-sprites map))
 
 			     (mapcar (lambda (sprite)
 				      (list (prin1-to-string (fset:lookup sprite "ID"))
 					    (prin1-to-string (fset:lookup sprite "NAME"))
-					    (prin1-to-string (fset:lookup sprite "TYPE"))))
+					    (fset:lookup sprite "TYPE")))
 				    (map-animatedsprites map))))
 			  qmapper.root:maps))))
 
@@ -260,6 +260,7 @@
 		  (equalp (fset:lookup v "TYPE") object-type)
 		  (equalp (str (fset:lookup v "ID")) object-id)))
 	   (lambda (v)
+	     (format t "Reversing prop ~a on ~a~%" name v)
 	     (fset:with v name (not (fset:lookup v name))))
 	   *document*))))
 

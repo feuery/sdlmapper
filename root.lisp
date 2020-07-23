@@ -37,22 +37,23 @@
        (mapcar #'cdr)))    
 
 (defclass* root
-  (layers nil)
-   (maps nil)
-   (scripts nil)
-   (tiles nil)
-   (tilesets nil)
-   (chosenMap 0)
-   (chosenLayer 0)
-   (chosenTileset  0)
-   (chosenTile  nil)
-   (StdVertexShader  "defaultVertex")
-   (StdFragmentShader  "defaultFragment")
-   (StdTileviewFragShader  "default.tileView")
-   ;; (animatedSprites :accessor root-animatedSprites :initarg :animatedSprites :initform  nil)
-   ;; (sprites :accessor root-sprites :initarg :sprites :initform   nil)
-   (selected-coordinates  (list 0 0 0 0))
-   (chosentool :pen))
+    (layers nil)
+  (maps nil (lambda (new-maps)
+	      (not (null new-maps))))
+  (scripts nil)
+  (tiles nil)
+  (tilesets nil)
+  (chosenMap 0)
+  (chosenLayer 0)
+  (chosenTileset  0)
+  (chosenTile  nil)
+  (StdVertexShader  "defaultVertex")
+  (StdFragmentShader  "defaultFragment")
+  (StdTileviewFragShader  "default.tileView")
+  ;; (animatedSprites :accessor root-animatedSprites :initarg :animatedSprites :initform  nil)
+  ;; (sprites :accessor root-sprites :initarg :sprites :initform   nil)
+  (selected-coordinates  (list 0 0 0 0))
+  (chosentool :pen))
 
 (defun root-get-chosen-map (*this*)
   (let ((id (root-chosenmap *this*))
@@ -541,7 +542,3 @@
 			    (let ((new-map (nth chosenmap maps)))
 			      (eval-map-scripts *engine-document* new-map :onload)))))
 
-;; (-> *document*
-;;     root-maps
-;;     first
-;;     qmapper.map:map-animatedsprites)
