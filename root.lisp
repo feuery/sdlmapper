@@ -518,10 +518,16 @@
 			     first)))
 	    (when (and script
 		       (script-contents script))
-	      (let ((to-run (format nil "(progn ~a)" (script-contents script))))
-		(format t "Running: ~a~%" (prin1-to-string to-run))
-		(eval (read-from-string to-run))))))
+	      (let* ((inputdir (pathname (str "/tmp/sdlmapper-" (random 999999) "/")))
+		     (script-filename (str inputdir "tmp.lisp")))
+		(ensure-directories-exist inputdir)
+		(spit-raw (script-contents script) script-filename)
+		(load script-filename)
+
+		
+		(cl-fad:delete-directory-and-files inputdir)))))
 	(format t "Ei löydy skriptejä ~a mapista ~a~%" script-key (fset:convert 'fset:map map)))))
+    
   
 
 

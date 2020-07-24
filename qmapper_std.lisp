@@ -48,6 +48,11 @@
     
     (format stream "~a" (prin1-to-string str))))
 
+(defun-export! spit-raw (str filename)
+  (with-open-file (stream filename :direction :output :if-does-not-exist :create :if-exists :supersede)
+    
+    (format stream "~a" str)))
+
 (defun empty? (l)
   (let ((len (cond ((or (fset:map? l) (fset:seq? l)) (fset:size l))
 		   (t (length l)))))
