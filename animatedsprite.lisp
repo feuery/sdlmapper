@@ -70,14 +70,16 @@
 	      	      (let* ((map (nth chosenmap maps))
 	      		     (renderer (fset:lookup args "RENDERER"))
 	      		     (animation-index (position animation (clean-hashmaps (fset:lookup map "ANIMATEDSPRITES")) :test #'equalp)))
-	      		(with-slots* (animatedsprites) map
-	      		  (setf (nth animation-index animatedsprites)
-	      			(with-slots* (sprites x y currentframeid angle ) (-> animation
-	      									     animatedsprite-advanceframeifneeded!)
-	      			  (setf (nth currentframeid sprites)
-	      				(with-slots* (position) (set-sprite-angle (nth currentframeid sprites) angle)
-	      				  (setf position (list x y))
-	      				  (draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))))
+			(if animation-index
+			    (with-slots* (animatedsprites) map
+			      (setf (nth animation-index animatedsprites)
+				    (with-slots* (sprites x y currentframeid angle ) (-> animation
+											 animatedsprite-advanceframeifneeded!)
+				      (setf (nth currentframeid sprites)
+					    (with-slots* (position) (set-sprite-angle (nth currentframeid sprites) angle)
+					      (setf position (list x y))
+					      (draw (nth currentframeid sprites) (fset:map ("RENDERER" renderer))))))))
+			    map)))
 		(assert (not (null (first the-maps))))
 	      	(setf qmapper.root:maps the-maps))))))
 
