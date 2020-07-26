@@ -1,6 +1,6 @@
 (defpackage :qmapper.std
   (:use :common-lisp :cl-arrows)
-  (:export :class->props :get-ms-time :class-props :class-props-str :validators)
+  (:export :class->props :get-ms-time :class-props :class-props-str :validators :events)
   (:import-from :qmapper.export :defmacro-export! :defun-export! :defvar-export!)
   (:import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable)
   (:import-from :cl-ppcre :regex-replace-all :create-scanner :scan :parse-string)
@@ -430,7 +430,7 @@
 	    (cons (car obj) (set-prop-in (cdr obj) ks value))
 	    (cons (car obj) value))
 	(if ks
-	    (set-prop obj key (set-prop-in (get-prop obj key) ks value))
+	    (set-prop obj key (set-prop-in (or (get-prop obj key) (fset:empty-map)) ks value))
 	    (set-prop obj key value)))))
 
 (defun-export! update-prop (obj key fn)
@@ -464,12 +464,6 @@
 ;; 		'(layers 0 opacity)
 ;; 		#'inc)
 
-
-(defun-export! add-event! (obj prop fn)
-  (assert (functionp fn))
-  (update-prop-in obj (list "EVENTS" (clean-key prop)) (lambda (l)
-							 (let* ((l (or l (empty-seq))))
-							   (insert l 0 (prin1-to-string (function-lambda-expression fn)))))))
 
 (defvar-export! *validators* (map))
 
@@ -695,6 +689,17 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 
 (defvar class->props (fset:empty-map))
 (defvar-export! validators (fset:empty-map))
+(defvar-export! events (fset:empty-map))
+
+(defun-export! add-prop-event! (class-name prop-name fn)
+  (setf events
+	(set-prop-in events (list class-name prop-name) fn)))
+
+(defun-export! drop-prop-event! (class-name prop-name)
+  (setf events (dissoc-prop-in events (list class-name prop-name))))
+
+(defun-export! clear-prop-events! ()
+  (setf events (fset:empty-map)))
 
 (defun-export! fn-list? (fn)
   (or (functionp fn)
@@ -764,6 +769,22 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 
 ;; (lol-slot-1 (make-lol))
 
+(defun drop-even-indexes (list &optional acc) nil
+  (if list
+      (drop-even-indexes (cddr list) (cons (car list) acc))
+      (reverse acc)))
+
+(defun get-setf-destinations (body)
+  (let ((dsts nil))
+    (walk-and-transform (lambda (f)
+			  (and (listp f)
+			       (equalp (first f) 'setf)))
+			(lambda (f)
+			  (push (drop-even-indexes (rest f)) dsts )
+			  f)
+			body :transform-lists t)
+    (apply #'concatenate 'list dsts)))
+
 (define-condition validator-failed (error)
   ((text :initarg :text :reader text)))
 
@@ -774,6 +795,9 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 		     (gensym)))
 	(type-sym (gensym))
 	(validators-sym (gensym))
+	(events-sym (gensym))
+	(slot-name (gensym))
+	(event-lambda (gensym))
 	(read-only? (equalp (car body) :read-only))
 	(force-convert-to-fset? (equalp (car body) :force-fset)))
     (if read-only?
@@ -791,8 +815,10 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 	`(let* ((,obj-sym (if (hash-table-p ,obj)
 			      ,obj
 			      (fset:convert 'hash-table ,obj :test #'equalp)))
+		(setf-destinations '(,@(get-setf-destinations body)))
 		(,type-sym (fset:lookup ,obj-sym "TYPE"))
-		(,validators-sym (fset:lookup qmapper.std:validators ,type-sym)))
+		(,validators-sym (fset:lookup qmapper.std:validators ,type-sym))
+		(,events-sym (fset:lookup qmapper.std:events ,type-sym)))
 	   ,@(reduce (lambda (body slot)
 		       (->> body						       
 			    (subst `(gethash ,(symbol-name slot) ,obj-sym)
@@ -804,6 +830,18 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 	       (if-let (validator (fset:lookup ,validators-sym prop-name))
 		 (if (not (funcall validator val))
 		     (error 'validator-failed)))))
+	   (if ,events-sym
+	     (fset:do-map (,slot-name ,event-lambda ,events-sym)
+	       (if (position ,slot-name setf-destinations :test #'string=)
+		   (progn
+		     ;(format t "Event found! ~%")
+		     (funcall ,event-lambda ,obj-sym ,slot-name (fset:lookup ,obj-sym ,slot-name)))
+		   ;; (format t "slot ~a not found from ~a ~%" ,slot-name setf-destinations)
+		   ))
+	     ;; (format t "No events found for class ~a~%" ,type-sym)
+	     )
+	   
+	     
 	   (if (or (not (hash-table-p ,obj))
 		   ,force-convert-to-fset?)
 	       (fset:convert 'map ,obj-sym)
@@ -873,12 +911,21 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 		   :initial-value m)))
 	(t m)))
 
-(defun-export! walk-and-transform (predicate transform tree)
-  (cond ((hash-table-p tree) (walk-and-transform predicate transform (fset:convert 'fset:map tree)))
+(defun-export! walk-and-transform (predicate transform tree &key (transform-lists nil))
+  (cond ((hash-table-p tree)
+	 (walk-and-transform predicate transform (fset:convert 'fset:map tree) :transform-lists transform-lists))
 	((fset:seq? tree)
-	 (walk-and-transform predicate transform  (fset:convert 'list tree)))
+	 (walk-and-transform predicate transform  (fset:convert 'list tree) :transform-lists transform-lists))
+	;; tää listahaarakin vois vaatia jotain predicate/transform juttua
 	((listp tree)
-	 (mapcar (partial #'walk-and-transform predicate transform) tree))
+	 (if transform-lists
+	     (let ((result (if (funcall predicate tree)
+			       (funcall transform tree)
+			       tree)))
+	       (if (listp result)
+		   (mapcar (lambda (tr) (walk-and-transform predicate transform tr :transform-lists transform-lists)) result)
+		   result))
+	     (mapcar (lambda (tr) (walk-and-transform predicate transform tr :transform-lists transform-lists)) tree)))
 	((fset:map? tree)
 	 ;; Do we want to handle maps as leaves of the tree?
 	 (if (funcall predicate tree)
@@ -887,8 +934,8 @@ by setting this var to nil and killing every process on the way. TODO make a bet
 			   (values k
 				   ;; lets handle the actual atoms of the tree
 				   (if (funcall predicate v)
-					 (funcall transform v)
-					 (walk-and-transform predicate transform  v))))
+				       (funcall transform v)
+				       (walk-and-transform predicate transform v :transform-lists transform-lists))))
 			 tree)))
 	(t tree)))
 
