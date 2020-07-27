@@ -341,6 +341,7 @@
 
 (defun-export! get-prop-in (obj ks)
   (values
+   (if obj
    (let* ((key (car ks))
 	  (cdr? (equal 'cdr key))
 	  (ks (cdr ks)))
@@ -350,7 +351,8 @@
 	     (cdr obj))
 	 (if ks
 	     (get-prop-in (get-prop obj key) ks)
-	     (get-prop obj key)))) ks))
+	     (get-prop obj key)))))
+   ks))
 
 (defun really-empty? (seq)
   (let ((s (fset:size seq)))
@@ -439,7 +441,12 @@
 (defun set-prop (obj key val)
   (cond ((or (fset:map? obj)
 	     (fset:seq? obj))
-	 (fset:with obj key val))
+	 (let ((result (fset:with obj key val))
+	       (event-lambda (get-prop-in events (list (fset:lookup obj "TYPE") key))))
+	   (when event-lambda
+	       (funcall event-lambda result key val))
+	   result))   
+	   
 	((listp obj)
 	 (setf (nth key obj) val)
 	 obj)
