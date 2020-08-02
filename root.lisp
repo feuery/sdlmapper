@@ -500,6 +500,9 @@
       loaded-document)))
 
 (defun eval-map-scripts (doc map onload-key)
+  (unless (or (hash-table-p map)
+	      (fset:map? map))
+    (format t "Map is something rubbish ~a~%" map))
   (assert (or (hash-table-p map)
 	      (fset:map? map)))
   (assert (equalp (fset:lookup map "TYPE") "MAP"))
@@ -530,21 +533,20 @@
     
   
 
-
-(defun-export! engine-choose-map (id &key (initial? nil))
-  ;(declaim (optimize (speed 0) (space 0) (debug 3)))
+(defun-export! engine-choose-map (new-map-index &key (initial? nil))
+					;(declaim (optimize (speed 0) (space 0) (debug 3)))
   (setf *engine-document* (with-slots* (chosenmap maps scripts) *engine-document*
-			    (let ((old-map (nth chosenmap maps)))
-			      (unless initial?
-				(eval-map-scripts *engine-document* old-map :on-unload)))
-			    (setf chosenmap
-				  (->> maps
-				       (position-if (lambda (m)
-						      ;;(format t "(equalp ~a (~a) ~a (~a))~%" (str (fset:lookup m "ID")) (class-of (str (fset:lookup m "ID"))) id (class-of id))
-						      (equalp (fset:lookup m "ID") id)))))
+			    ;;Maps: (Map 1 Oikeasti uusi kartta)
 			    
-			    (assert chosenmap)
+			    (let ((old-map (nth chosenmap maps)))
+			      (if new-map-index
+				  (progn
+				    (unless initial?
+				      (eval-map-scripts *engine-document* old-map :on-unload))
+				    
+				    (setf chosenmap new-map-index)				    
+				    (assert chosenmap)
+				    (let ((new-map (nth chosenmap maps)))
+				      (eval-map-scripts *engine-document* new-map :onload)))
 
-			    (let ((new-map (nth chosenmap maps)))
-			      (eval-map-scripts *engine-document* new-map :onload)))))
-
+				  (format t "Couldn't find new map index when choosing a new map"))))))

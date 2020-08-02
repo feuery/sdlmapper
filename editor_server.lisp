@@ -130,10 +130,11 @@
 (defmessage "SELECT-MAP" (message client-socket params)
   (let* ((searched-id (parse-integer (car params)))
 	 (index (find-map-index (root-maps *document*) #'map-id searched-id)))
-    (when index
-      (setf *document* (with-slots* (chosenmap) *document*
-			 (setf chosenmap index)))
-      (setf qmapper.app-state:editor-state :map))))
+    (schedule-once (lambda ()
+		     (when index
+		       (setf *document* (with-slots* (chosenmap) *document*
+					  (setf chosenmap index)))
+		       (setf qmapper.app-state:editor-state :map))))))
 
 (defmessage "LOAD-TILESET" (message client-socket params)
   (let* ((tileset-path (car params))
@@ -304,23 +305,24 @@
 	    (setf scripts (cons (make-script :ns ns) scripts))))))
 
 (defmessage "START-PAUSE-GAME" (message client-socket params)
-  (with-slots* (maps chosenmap) *document* :read-only
-    (let* ((initial-map (nth chosenmap maps))
-	   (initial-map-id (map-id initial-map)))
+  (let ((local-doc *document*))
+    (with-slots* (chosenmap) *document* :read-only
       (cond ((equalp app-state :editor)
 	     ;; starting the game
 	     (format t "Started the game~%")
 	     (setf app-state :engine)
 	     ;; let's freeze *document* as immutable map
-	     (setf *document* (clean-hashmaps *document*))
+	     (setf local-doc (clean-hashmaps *document*))
 	     (setf *engine-document* *document*)
-	     (engine-choose-map initial-map-id :initial? t))
+	     (engine-choose-map chosenmap :initial? t))
 	    
 
 	    ((equalp app-state :engine)
 	     ;; stopping the game
 	     (format t "Stopped the game~%")
-	     (setf app-state :editor))))))
+	     (setf app-state :editor))))
+    (setf *document* local-doc)))
+
 
 (defmessage "ADD-SCRIPT-TO-ONLOAD" (message client-socket params)
   ;; TODO edit the defmessage macro so that message & client sockets just exist in the macro's scope and params list is actually (destructuring-bind ,params params-list ,@body)
