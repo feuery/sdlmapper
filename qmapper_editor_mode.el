@@ -274,6 +274,20 @@
 				      (lambda (resp)
 					t)))))))
 
+(defun qmapper-save-playable-bundle ()
+  (interactive)
+  (query-qmapper "LIST-MAPS\n" (lambda (maps)
+				 (let* ((maps (mapcar #'cadr (car (read-from-string maps))))
+					(chosen-map-index (position (completing-read "Initial map: " maps) maps :test #'equalp))
+					(dst-file (read-file-name "Where do we save the bundle: ")))
+				   (query-qmapper (concat "SAVE-PLAYABLE-BUNDLE;" (prin1-to-string chosen-map-index) ";" dst-file ";\n") (lambda (result)
+																	   (message (concat "Saved to " dst-file))))))))
+				   
+				   
+;; (initial-map-name destination-file-name)
+  
+  
+
 		 
 
 

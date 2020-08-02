@@ -373,6 +373,14 @@
        prin1-to-string
 
        (format (socket-stream client-socket) "~a~%" )))
+
+(defmessage "SAVE-PLAYABLE-BUNDLE" (message client-socket params)
+  (destructuring-bind (initial-map-index dst-file-name) params
+    (let ((dst-file-name (pathname dst-file-name))
+	  (index (parse-integer initial-map-index)))
+      (assert (< index (length (root-maps *document*))))
+      (schedule-once (lambda ()
+		       (save-doc! (fset:with (clean-hashmaps *document*) "CHOSENMAP" (parse-integer initial-map-index))  dst-file-name))))))
 							  
 
 
