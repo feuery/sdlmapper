@@ -46,4 +46,4 @@
 (defun-export! start-gravity-loop! ()
   (make-thread #'gravity-loop :name "Gravity thread"))
 	  
-(start-gravity-loop!)
+

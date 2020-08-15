@@ -132,6 +132,6 @@
     (funcall actual-processor client-socket socket-stream message)))
 
 (export 'process-client-socket)
-(run-tcp-server-threaded 3006)
+
 
 

@@ -208,26 +208,55 @@
 
     (:quit () t)))
 
+(defun start-subsystem-threads ()
+  (qmapper.editor-server:run-editor-server-threaded 3003)
+  (qmapper.doc-server:run-tcp-server-threaded 3006)
+  (qmapper.gravity-loop:start-gravity-loop!)
+  (qmapper.keyboard_loop:start-kbd-loop!)
+  (qmapper.transitions:start-dispatcher!))
+
+(defun get-argv-param (param-flag)
+  ;; let's skip the binary name
+  (let ((args (rest sb-ext:*posix-argv*)))
+    (assert (evenp (length args)))
+    (let ((args (fset:convert 'fset:map (alexandria:plist-hash-table args))))
+      (fset:lookup args (str "--" param-flag)))))    
+
 (defun main ()
+  (format t "start-bundle path: ~a~%" )
+  
   (sdl2:with-init (:everything)
     (format t "Using SDL Library Version: ~D.~D.~D~%"
             sdl2-ffi:+sdl-major-version+
             sdl2-ffi:+sdl-minor-version+
             sdl2-ffi:+sdl-patchlevel+)
+    (start-subsystem-threads)
     (sdl2:with-window (win :title "qmapper without the q" :flags '(:shown :resizable))
       (let* ((renderer (sdl2:create-renderer win)))
-	(sdl2:set-render-draw-color renderer 255 0 0 255)
-	(sdl2:set-render-draw-blend-mode renderer sdl2-ffi:+SDL-BLENDMODE-BLEND+)
-	(setf *renderer* renderer)
-	(setf *window* win)
-	(event-loop renderer)))))
+  	(sdl2:set-render-draw-color renderer 255 0 0 255)
+  	(sdl2:set-render-draw-blend-mode renderer sdl2-ffi:+SDL-BLENDMODE-BLEND+)
+  	(setf *renderer* renderer)
+  	(setf *window* win)
+	;; TODO testaa
+	(if-let (bundle-path (get-argv-param "start-bundle"))
+	  (progn
+	    (load-doc! bundle-path renderer)
+	    (setf app-state :engine)))
+	
+  	(event-loop renderer)))))
 
 ;; (main)
+
+;; (sb-ext:save-lisp-and-die "/tangorauta/projects/cl-opengl-test/engine" :toplevel #'main :executable t)
+
 
 ;; example/test code for loading a project
 ;; (schedule-once (lambda ()
 ;; 		 (setf *document*
-;; 		       (load-doc! #P"/home/feuer/skriptitesti.sdlmap" *renderer*))))
+;; 		       (load-doc! #P"/tangorauta/projects/cl-opengl-test/pelikelpoinen bundle" *renderer*))))
+
+;; #P"/tangorauta/projects/cl-opengl-test/pelikelpoinen bundle"
+;; #P"/home/feuer/skriptitesti.sdlmap"
 
 ;; (setf *document* (qmapper.root:init-root!))
 

@@ -77,7 +77,7 @@
 (defun-export! start-dispatcher! ()
   (make-thread #'dispatcher :name "Dispatcher thread"))
 
-(defvar *dispatcher-thread* (start-dispatcher!))
+;;(defvar *dispatcher-thread* (start-dispatcher!))
 ;; this adds the values in the REST-PARAMETERS field to x of the first sprite
 ;; (push (make-event (lambda (x &rest rest-params)
 ;; 		    (fset:map ("DOC" (apply #'- x (car rest-params)))

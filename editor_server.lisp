@@ -17,7 +17,7 @@
 	:bordeaux-threads)
   (:import-from :qmapper.export :defun-export!)
   (:shadowing-import-from :fset :empty-map :empty-seq :seq :insert :convert :with :lookup :wb-map-from-list :fset-setup-readtable :map)
-  (:export :*sdl-single-command-queue* :schedule-once))
+  (:export :*sdl-single-command-queue* :schedule-once :run-editor-server-threaded))
 
 (in-package :qmapper.editor-server)
 
@@ -424,4 +424,4 @@
   (make-thread (lambda ()
 		 (run-editor-server port)) :name "doc-server-thread"))
 
-(run-editor-server-threaded 3003)
+;;(run-editor-server-threaded 3003)

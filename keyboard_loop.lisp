@@ -32,5 +32,4 @@
 
 (defun-export! start-kbd-loop! ()
   (make-thread #'kbd-loop :name "Keyboard thread"))
-	  
-(start-kbd-loop!)
+	 
