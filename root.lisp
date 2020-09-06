@@ -475,26 +475,26 @@
     (archive:with-open-archive (archive path :direction :input)
       (archive::extract-files-from-archive archive))
 
-    (let ((loaded-document (->>  (str input-dir-name "/doc.lisp")
-				 slurp
-				 read-from-string
-				 eval
-				 filter-seqs
-				 (walk-and-transform
-				  ;; if a leave is a map and has a type of obj
-				  (lambda (leave)
-				    (let ((result 
-					    (and (fset:map? leave)
-						 (equalp (fset:lookup leave "TYPE")
-							 "OBJ"))))
-				      result))
-				  ;; then set its surface and texture correctly
-				  (lambda (leave)
-				    (let ((img-path (str input-dir-name (fset:lookup leave "ID") ".png")))
-				      ;;(format t "Loading image ~a~%" img-path)
-				      (with-slots* (surface texture) leave
-					(setf surface (sdl2-image:load-image img-path))
-					(setf texture (sdl2:create-texture-from-surface renderer surface)))))))))
+    (let ((loaded-document (->> (str input-dir-name "/doc.lisp")
+				slurp
+				read-from-string
+				eval
+				filter-seqs
+				(walk-and-transform
+				 ;; if a leave is a map and has a type of obj
+				 (lambda (leave)
+				   (let ((result 
+					   (and (fset:map? leave)
+						(equalp (fset:lookup leave "TYPE")
+							"OBJ"))))
+				     result))
+				 ;; then set its surface and texture correctly
+				 (lambda (leave)
+				   (let ((img-path (str input-dir-name (fset:lookup leave "ID") ".png")))
+				     ;;(format t "Loading image ~a~%" img-path)
+				     (with-slots* (surface texture) leave
+				       (setf surface (sdl2-image:load-image img-path))
+				       (setf texture (sdl2:create-texture-from-surface renderer surface)))))))))
       (format t "Removing files from ~a~%" input-dir-name)
       (cl-fad:delete-directory-and-files input-dir-name)
       loaded-document)))

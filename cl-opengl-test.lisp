@@ -220,11 +220,22 @@
   (let ((args (rest sb-ext:*posix-argv*)))
     (assert (evenp (length args)))
     (let ((args (fset:convert 'fset:map (alexandria:plist-hash-table args))))
-      (fset:lookup args (str "--" param-flag)))))    
+      (fset:lookup args (str "--" param-flag))))) 
+
+(defun setup-state (renderer)
+  (sdl2:set-render-draw-color renderer 255 0 0 255)
+  (sdl2:set-render-draw-blend-mode renderer sdl2-ffi:+SDL-BLENDMODE-BLEND+)
+  (if-let (bundle-path (get-argv-param "start-bundle"))
+    (progn
+
+      (setf *document* (load-doc! bundle-path renderer))
+
+      (let ((local-document *document*))
+	(with-slots* (chosenmap) *document* :read-only
+	  (setf local-document (goto-engine-mode local-document chosenmap)))
+	(setf *document* local-document)))))
 
 (defun main ()
-  (format t "start-bundle path: ~a~%" )
-  
   (sdl2:with-init (:everything)
     (format t "Using SDL Library Version: ~D.~D.~D~%"
             sdl2-ffi:+sdl-major-version+
@@ -233,16 +244,10 @@
     (start-subsystem-threads)
     (sdl2:with-window (win :title "qmapper without the q" :flags '(:shown :resizable))
       (let* ((renderer (sdl2:create-renderer win)))
-  	(sdl2:set-render-draw-color renderer 255 0 0 255)
-  	(sdl2:set-render-draw-blend-mode renderer sdl2-ffi:+SDL-BLENDMODE-BLEND+)
   	(setf *renderer* renderer)
   	(setf *window* win)
-	;; TODO testaa
-	(if-let (bundle-path (get-argv-param "start-bundle"))
-	  (progn
-	    (load-doc! bundle-path renderer)
-	    (setf app-state :engine)))
 	
+	(setup-state renderer)
   	(event-loop renderer)))))
 
 ;; (main)

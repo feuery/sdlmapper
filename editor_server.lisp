@@ -304,17 +304,21 @@
 	  (with-slots* (scripts) *document*
 	    (setf scripts (cons (make-script :ns ns) scripts))))))
 
+(defun-export! goto-engine-mode (local-doc chosenmap)
+  (setf app-state :engine)
+  ;; let's freeze *document* as immutable map
+  (setf local-doc (clean-hashmaps *document*))
+  (setf *engine-document* *document*)
+  (engine-choose-map chosenmap :initial? t)
+  local-doc)
+  
 (defmessage "START-PAUSE-GAME" (message client-socket params)
   (let ((local-doc *document*))
     (with-slots* (chosenmap) *document* :read-only
       (cond ((equalp app-state :editor)
 	     ;; starting the game
 	     (format t "Started the game~%")
-	     (setf app-state :engine)
-	     ;; let's freeze *document* as immutable map
-	     (setf local-doc (clean-hashmaps *document*))
-	     (setf *engine-document* *document*)
-	     (engine-choose-map chosenmap :initial? t))
+	     (setf local-doc (goto-engine-mode local-doc chosenmap)))
 	    
 
 	    ((equalp app-state :engine)
